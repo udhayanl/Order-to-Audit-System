@@ -19,6 +19,8 @@ import {
   Download,
   AlertTriangle,
   Shield,
+  ShieldCheck,
+  Boxes,
   X,
 } from 'lucide-react';
 
@@ -252,6 +254,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             <NavLink to="/audit-logs" onClick={handleNavClick} className={linkClass}>
               <Shield className="w-4 h-4" />
               Audit Trail
+            </NavLink>
+          </nav>
+        </div>
+      )}
+
+      {/* INVENTORY & STOCK MANAGEMENT */}
+      {(role === 'ADMIN' || role === 'OWNER' || role === 'PRODUCTION_SUPERVISOR' || role === 'ACCOUNTANT_AUDITOR') && (
+        <div>
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Inventory & Stock
+          </div>
+          <nav className="space-y-1">
+            <NavLink to="/inventory" onClick={handleNavClick} className={linkClass}>
+              <Boxes className="w-4 h-4 text-brand-600" />
+              Stock Overview
+            </NavLink>
+            <NavLink to="/inventory/finished-goods" onClick={handleNavClick} className={linkClass}>
+              <Layers className="w-4 h-4 text-indigo-600" />
+              Finished Goods
+            </NavLink>
+            <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4" />
+              Stock Ledger
+            </NavLink>
+            {(role === 'ADMIN' || role === 'OWNER' || role === 'PRODUCTION_SUPERVISOR') && (
+              <NavLink to="/inventory/adjustments" onClick={handleNavClick} className={linkClass}>
+                <Settings className="w-4 h-4" />
+                Stock Adjustments
+              </NavLink>
+            )}
+            <NavLink to="/inventory/valuation" onClick={handleNavClick} className={linkClass}>
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+              FIFO Valuation
+            </NavLink>
+            <NavLink to="/inventory/low-stock" onClick={handleNavClick} className={linkClass}>
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              Low Stock Alerts
+            </NavLink>
+            <NavLink to="/inventory/reconciliation" onClick={handleNavClick} className={linkClass}>
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              Reconciliation
+            </NavLink>
+            <NavLink to="/inventory/opening-stock" onClick={handleNavClick} className={linkClass}>
+              <Archive className="w-4 h-4" />
+              Opening Stock
             </NavLink>
           </nav>
         </div>

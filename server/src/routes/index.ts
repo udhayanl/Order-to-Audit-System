@@ -154,13 +154,42 @@ router.get('/production/runs', authenticateJWT, ProductionController.getRuns);
 router.get('/production/runs/:id', authenticateJWT, ProductionController.getRunById);
 
 // ================= PURCHASE ROUTES =================
-router.post('/purchases', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), PurchaseController.recordPurchase);
+router.post('/purchases', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), PurchaseController.createPurchase);
+router.post('/purchases/record', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), PurchaseController.recordPurchase);
 router.get('/purchases', authenticateJWT, PurchaseController.getPurchases);
+router.get('/purchases/:id', authenticateJWT, PurchaseController.getPurchaseById);
+router.post('/purchases/:id/confirm', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), PurchaseController.confirmPurchase);
+router.post('/purchases/:id/receive', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), PurchaseController.receivePurchase);
+
+// Goods Receipt Note (GRN) Routes
+router.get('/goods-receipts', authenticateJWT, PurchaseController.getGoodsReceipts);
+router.get('/goods-receipts/:id', authenticateJWT, PurchaseController.getGoodsReceiptById);
+router.post('/goods-receipts', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), PurchaseController.postGoodsReceipt);
+router.post('/goods-receipts/:id/post', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), PurchaseController.postGoodsReceipt);
 
 // ================= INVENTORY ROUTES =================
 router.get('/inventory/summary', authenticateJWT, InventoryController.getSummary);
+router.get('/inventory/raw-materials', authenticateJWT, InventoryController.getRawMaterials);
+router.get('/inventory/packaging-materials', authenticateJWT, InventoryController.getPackagingMaterials);
+router.get('/inventory/finished-goods', authenticateJWT, InventoryController.getFinishedGoods);
+router.get('/inventory/items/:id', authenticateJWT, InventoryController.getItemDetails);
+router.get('/inventory/items/:id/ledger', authenticateJWT, InventoryController.getItemLedger);
 router.get('/inventory/ledger', authenticateJWT, InventoryController.getLedger);
+router.get('/inventory/low-stock', authenticateJWT, InventoryController.getLowStock);
+router.get('/inventory/valuation', authenticateJWT, InventoryController.getValuation);
+router.get('/inventory/reconciliation', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT_AUDITOR), InventoryController.getReconciliation);
+router.post('/inventory/reconcile', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InventoryController.autoReconcile);
+
+// Opening stock setup
+router.post('/inventory/opening-stock', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InventoryController.createOpeningStock);
+router.get('/inventory/opening-stock', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT_AUDITOR), InventoryController.getOpeningStockRecords);
+
+// Stock adjustments
+router.post('/inventory/adjustments', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), InventoryController.createAdjustment);
 router.post('/inventory/adjust', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InventoryController.createAdjustment);
+router.get('/inventory/adjustments', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER, Role.ACCOUNTANT_AUDITOR), InventoryController.getAdjustments);
+router.post('/inventory/adjustments/:id/approve', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InventoryController.approveAdjustment);
+router.post('/inventory/adjustments/:id/reject', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InventoryController.rejectAdjustment);
 
 // ================= PAYMENT ROUTES =================
 router.post('/payments', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), PaymentController.recordPayment);

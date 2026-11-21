@@ -43,6 +43,25 @@ enum StockMovementType {
   SALES_RETURN
   STOCK_ADJUSTMENT
   PURCHASE_RETURN
+  WASTAGE
+  DAMAGE
+}
+
+enum StockAdjustmentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  POSTED
+}
+
+enum StockAdjustmentType {
+  INCREASE
+  DECREASE
+  PHYSICAL_COUNT
+  DAMAGE
+  WASTAGE
+  EXPIRY
 }
 
 enum ItemType {
@@ -84,6 +103,10 @@ model User {
   creditNotes  CreditNote[]  @relation("UserCreditNotes")
   dispatches   Dispatch[]    @relation("UserDispatches")
   stockLedgers StockLedger[] @relation("UserStockLedgers")
+  stockAdjustments StockAdjustment[] @relation("UserStockAdjustments")
+  approvedAdjustments StockAdjustment[] @relation("ApprovedStockAdjustments")
+  goodsReceipts    GoodsReceipt[]    @relation("UserGoodsReceipts")
+  openingStockRecords OpeningStockRecord[] @relation("UserOpeningStock")
   auditLogs    AuditLog[]
 }
 
@@ -188,6 +211,7 @@ model RawMaterial {
   bomItems     BOMItem[]
   purchaseItems PurchaseItem[]
   consumptions ProductionConsumption[]
+  goodsReceiptItems GoodsReceiptItem[]
 
   @@index([code])
 }
@@ -208,6 +232,7 @@ model PackagingMaterial {
   bomItems      BOMItem[]
   purchaseItems PurchaseItem[]
   consumptions  ProductionConsumption[]
+  goodsReceiptItems GoodsReceiptItem[]
 
   @@index([code])
 }
@@ -272,22 +297,25 @@ model UnitConversion {
 }
 
 model Purchase {
-  id             String         @id @default(uuid())
-  purchaseNumber String         @unique
-  supplierId     String
-  supplier       Supplier       @relation(fields: [supplierId], references: [id])
-  purchaseDate   DateTime       @default(now())
-  totalTaxable   Decimal        @db.Decimal(12, 2)
-  totalGst       Decimal        @db.Decimal(12, 2)
-  grandTotal     Decimal        @db.Decimal(12, 2)
-  status         String         @default("RECEIVED") // RECEIVED, CANCELLED
-  notes          String?
-  createdById    String
-  createdBy      User           @relation("UserPurchases", fields: [createdById], references: [id])
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                    String         @id @default(uuid())
+  purchaseNumber        String         @unique
+  supplierId            String
+  supplier              Supplier       @relation(fields: [supplierId], references: [id])
+  purchaseDate          DateTime       @default(now())
+  supplierInvoiceNumber String?
+  totalTaxable          Decimal        @db.Decimal(12, 2)
+  totalGst              Decimal        @db.Decimal(12, 2)
+  grandTotal            Decimal        @db.Decimal(12, 2)
+  status                String         @default("RECEIVED") // DRAFT, CONFIRMED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  receivedDate          DateTime?
+  notes                 String?
+  createdById           String
+  createdBy             User           @relation("UserPurchases", fields: [createdById], references: [id])
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
-  items          PurchaseItem[]
+  items                 PurchaseItem[]
+  goodsReceipts         GoodsReceipt[]
 
   @@index([purchaseNumber])
   @@index([supplierId])
@@ -303,6 +331,7 @@ model PurchaseItem {
   packagingMaterialId String?
   packagingMaterial   PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
   quantity            Decimal            @db.Decimal(12, 3)
+  receivedQuantity    Decimal            @default(0.0) @db.Decimal(12, 3)
   unit                String
   unitPrice           Decimal            @db.Decimal(12, 2)
   gstRate             Decimal            @default(5.0) @db.Decimal(5, 2)
@@ -310,8 +339,56 @@ model PurchaseItem {
   gstAmount           Decimal            @db.Decimal(12, 2)
   totalAmount         Decimal            @db.Decimal(12, 2)
 
+  goodsReceiptItems   GoodsReceiptItem[]
+
   @@index([purchaseId])
 }
+
+model GoodsReceipt {
+  id            String             @id @default(uuid())
+  grnNumber     String             @unique
+  purchaseId    String
+  purchase      Purchase           @relation(fields: [purchaseId], references: [id])
+  receiptDate   DateTime           @default(now())
+  challanNumber String?
+  vehicleNumber String?
+  status        String             @default("POSTED") // DRAFT, POSTED, CANCELLED
+  notes         String?
+  receivedById  String
+  receivedBy    User               @relation("UserGoodsReceipts", fields: [receivedById], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  items         GoodsReceiptItem[]
+
+  @@index([grnNumber])
+  @@index([purchaseId])
+}
+
+model GoodsReceiptItem {
+  id                  String             @id @default(uuid())
+  goodsReceiptId      String
+  goodsReceipt        GoodsReceipt       @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  purchaseItemId      String?
+  purchaseItem        PurchaseItem?      @relation(fields: [purchaseItemId], references: [id])
+  itemType            ItemType
+  rawMaterialId       String?
+  rawMaterial         RawMaterial?       @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId String?
+  packagingMaterial   PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
+  orderedQuantity     Decimal            @db.Decimal(12, 3)
+  receivedQuantity    Decimal            @db.Decimal(12, 3)
+  acceptedQuantity    Decimal            @db.Decimal(12, 3)
+  rejectedQuantity    Decimal            @default(0.0) @db.Decimal(12, 3)
+  unit                String
+  unitPrice           Decimal            @db.Decimal(12, 2)
+  batchNumber         String?
+  expiryDate          DateTime?
+  rejectionReason     String?
+
+  @@index([goodsReceiptId])
+}
+
 
 model ProductionRun {
   id                   String           @id @default(uuid())
@@ -518,23 +595,80 @@ model DispatchItem {
 }
 
 model StockLedger {
-  id            String            @id @default(uuid())
-  itemType      ItemType
-  itemId        String            // rawMaterialId, packagingMaterialId, or productId
-  movementType  StockMovementType
-  quantity      Decimal           @db.Decimal(12, 3) // positive for additions, negative for deductions
-  balanceAfter  Decimal           @db.Decimal(12, 3)
-  unit          String
-  referenceType String            // "PURCHASE", "PRODUCTION_RUN", "DISPATCH", "ADJUSTMENT", "OPENING"
-  referenceId   String?
-  notes         String?
-  userId        String?
-  user          User?             @relation("UserStockLedgers", fields: [userId], references: [id])
-  createdAt     DateTime          @default(now())
+  id              String            @id @default(uuid())
+  itemType        ItemType
+  itemId          String            // rawMaterialId, packagingMaterialId, or productId
+  movementType    StockMovementType
+  quantity        Decimal           @db.Decimal(12, 3) // positive for additions, negative for deductions
+  balanceAfter    Decimal           @db.Decimal(12, 3)
+  unit            String
+  direction       String?           @default("IN") // "IN" or "OUT"
+  transactionDate DateTime?         @default(now())
+  unitRate        Decimal?          @db.Decimal(12, 2)
+  totalValue      Decimal?          @db.Decimal(12, 2)
+  batchNumber     String?
+  expiryDate      DateTime?
+  referenceType   String            // "PURCHASE", "PRODUCTION_RUN", "DISPATCH", "ADJUSTMENT", "OPENING", "GRN"
+  referenceId     String?
+  notes           String?
+  userId          String?
+  user            User?             @relation("UserStockLedgers", fields: [userId], references: [id])
+  createdAt       DateTime          @default(now())
 
   @@index([itemType, itemId])
   @@index([createdAt])
 }
+
+model InventoryBalance {
+  id              String   @id @default(uuid())
+  itemId          String
+  itemType        ItemType
+  currentQuantity Decimal  @default(0.0) @db.Decimal(12, 3)
+  baseUnit        String
+  lastUpdatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([itemId, itemType])
+  @@index([itemType])
+}
+
+model StockAdjustment {
+  id               String                @id @default(uuid())
+  adjustmentNumber String                @unique
+  itemId           String
+  itemType         ItemType              @default(RAW_MATERIAL)
+  adjustmentType   StockAdjustmentType   @default(PHYSICAL_COUNT)
+  systemQuantity   Decimal               @db.Decimal(12, 3)
+  physicalQuantity Decimal               @db.Decimal(12, 3)
+  difference       Decimal               @db.Decimal(12, 3) // physical - system
+  unit             String                @default("kg")
+  reason           String
+  status           StockAdjustmentStatus @default(PENDING_APPROVAL)
+  createdById      String
+  createdBy        User                  @relation("UserStockAdjustments", fields: [createdById], references: [id])
+  approvedById     String?
+  approvedBy       User?                 @relation("ApprovedStockAdjustments", fields: [approvedById], references: [id])
+  createdAt        DateTime              @default(now())
+  approvedAt       DateTime?
+  postedAt         DateTime?
+  notes            String?
+
+  @@index([itemId, itemType])
+  @@index([adjustmentNumber])
+}
+
+model OpeningStockRecord {
+  id           String   @id @default(uuid())
+  recordNumber String   @unique
+  date         DateTime @default(now())
+  status       String   @default("POSTED") // POSTED
+  notes        String?
+  createdById  String
+  createdBy    User     @relation("UserOpeningStock", fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([recordNumber])
+}
+
 
 model InventoryValuationLayer {
   id                String   @id @default(uuid())

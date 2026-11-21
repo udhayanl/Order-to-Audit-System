@@ -21,8 +21,13 @@ export async function seedDatabase(isReset = true) {
     await prisma.salesOrder.deleteMany();
     await prisma.productionConsumption.deleteMany();
     await prisma.productionRun.deleteMany();
+    await prisma.goodsReceiptItem.deleteMany();
+    await prisma.goodsReceipt.deleteMany();
     await prisma.purchaseItem.deleteMany();
     await prisma.purchase.deleteMany();
+    await prisma.stockAdjustment.deleteMany();
+    await prisma.openingStockRecord.deleteMany();
+    await prisma.inventoryBalance.deleteMany();
     await prisma.stockLedger.deleteMany();
     await prisma.inventoryValuationLayer.deleteMany();
     await prisma.bOMItem.deleteMany();
@@ -286,6 +291,15 @@ export async function seedDatabase(isReset = true) {
 
   // 7. Seed Stock Ledgers & FIFO Valuation Layers for Opening Inventory
   console.log('[Seed] Recording opening balances in immutable StockLedger and FIFO layers...');
+  const openingDoc = await prisma.openingStockRecord.create({
+    data: {
+      recordNumber: 'OPN-2026-0001',
+      notes: 'Initial NIT Trichy Benchmark Opening Stock Record',
+      status: 'POSTED',
+      createdById: admin.id,
+    },
+  });
+
   // Flour
   await prisma.stockLedger.create({
     data: {
@@ -295,7 +309,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(100.0),
       balanceAfter: new Prisma.Decimal(100.0),
       unit: 'kg',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(42.0),
+      totalValue: new Prisma.Decimal(4200.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit',
       userId: admin.id,
     },
@@ -308,6 +326,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(100.0),
       unitCost: new Prisma.Decimal(42.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: flourRM.id,
+      itemType: ItemType.RAW_MATERIAL,
+      currentQuantity: new Prisma.Decimal(100.0),
+      baseUnit: 'kg',
     },
   });
 
@@ -320,7 +347,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(30.0),
       balanceAfter: new Prisma.Decimal(30.0),
       unit: 'litre',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(140.0),
+      totalValue: new Prisma.Decimal(4200.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit',
       userId: admin.id,
     },
@@ -333,6 +364,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(30.0),
       unitCost: new Prisma.Decimal(140.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: oilRM.id,
+      itemType: ItemType.RAW_MATERIAL,
+      currentQuantity: new Prisma.Decimal(30.0),
+      baseUnit: 'litre',
     },
   });
 
@@ -345,7 +385,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(5.0),
       balanceAfter: new Prisma.Decimal(5.0),
       unit: 'kg',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(200.0),
+      totalValue: new Prisma.Decimal(1000.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit',
       userId: admin.id,
     },
@@ -358,6 +402,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(5.0),
       unitCost: new Prisma.Decimal(200.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: spiceRM.id,
+      itemType: ItemType.RAW_MATERIAL,
+      currentQuantity: new Prisma.Decimal(5.0),
+      baseUnit: 'kg',
     },
   });
 
@@ -370,7 +423,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(500.0),
       balanceAfter: new Prisma.Decimal(500.0),
       unit: 'pieces',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(2.50),
+      totalValue: new Prisma.Decimal(1250.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit',
       userId: admin.id,
     },
@@ -383,6 +440,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(500.0),
       unitCost: new Prisma.Decimal(2.50),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: pouchPkg.id,
+      itemType: ItemType.PACKAGING,
+      currentQuantity: new Prisma.Decimal(500.0),
+      baseUnit: 'pieces',
     },
   });
 
@@ -395,7 +461,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(30.0),
       balanceAfter: new Prisma.Decimal(30.0),
       unit: 'pieces',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(15.00),
+      totalValue: new Prisma.Decimal(450.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit',
       userId: admin.id,
     },
@@ -408,6 +478,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(30.0),
       unitCost: new Prisma.Decimal(15.00),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: cartonPkg.id,
+      itemType: ItemType.PACKAGING,
+      currentQuantity: new Prisma.Decimal(30.0),
+      baseUnit: 'pieces',
     },
   });
 
@@ -420,7 +499,11 @@ export async function seedDatabase(isReset = true) {
       quantity: new Prisma.Decimal(50.0),
       balanceAfter: new Prisma.Decimal(50.0),
       unit: 'packets',
+      direction: 'IN',
+      unitRate: new Prisma.Decimal(30.0),
+      totalValue: new Prisma.Decimal(1500.0),
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
       notes: 'Initial opening stock audit (50 packets)',
       userId: admin.id,
     },
@@ -433,6 +516,15 @@ export async function seedDatabase(isReset = true) {
       remainingQuantity: new Prisma.Decimal(50.0),
       unitCost: new Prisma.Decimal(30.0), // Nominal opening valuation
       referenceType: 'OPENING',
+      referenceId: openingDoc.recordNumber,
+    },
+  });
+  await prisma.inventoryBalance.create({
+    data: {
+      itemId: murukkuProduct.id,
+      itemType: ItemType.FINISHED_GOOD,
+      currentQuantity: new Prisma.Decimal(50.0),
+      baseUnit: 'packets',
     },
   });
 

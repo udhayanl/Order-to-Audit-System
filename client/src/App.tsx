@@ -19,6 +19,13 @@ import { BOMListPage } from './pages/production/BOMListPage.js';
 import { RawMaterialsPage } from './pages/inventory/RawMaterialsPage.js';
 import { PackagingMaterialsPage } from './pages/inventory/PackagingMaterialsPage.js';
 import { StockLedgerPage } from './pages/inventory/StockLedgerPage.js';
+import { InventoryOverviewPage } from './pages/inventory/InventoryOverviewPage.js';
+import { FinishedGoodsPage } from './pages/inventory/FinishedGoodsPage.js';
+import { StockAdjustmentsPage } from './pages/inventory/StockAdjustmentsPage.js';
+import { InventoryValuationPage } from './pages/inventory/InventoryValuationPage.js';
+import { LowStockAlertsPage } from './pages/inventory/LowStockAlertsPage.js';
+import { StockReconciliationPage } from './pages/inventory/StockReconciliationPage.js';
+import { OpeningStockPage } from './pages/inventory/OpeningStockPage.js';
 import { PaymentsListPage } from './pages/payments/PaymentsListPage.js';
 import { AgeingReportPage } from './pages/payments/AgeingReportPage.js';
 import { CustomersPage } from './pages/masters/CustomersPage.js';
@@ -72,18 +79,27 @@ export const App: React.FC = () => {
             {/* Dispatches */}
             <Route path="dispatches" element={<DispatchListPage />} />
 
-            {/* Purchases */}
+            {/* Purchases & Goods Receipts */}
             <Route path="purchases" element={<PurchasesListPage />} />
+            <Route path="goods-receipts" element={<PurchasesListPage />} />
 
             {/* Production */}
             <Route path="production/runs" element={<ProductionRunsPage />} />
             <Route path="production/new" element={<NewProductionRunPage />} />
             <Route path="boms" element={<BOMListPage />} />
 
-            {/* Inventory */}
+            {/* Inventory & Stock Ledger */}
+            <Route path="inventory" element={<InventoryOverviewPage />} />
+            <Route path="inventory/overview" element={<InventoryOverviewPage />} />
             <Route path="inventory/raw" element={<RawMaterialsPage />} />
             <Route path="inventory/packaging" element={<PackagingMaterialsPage />} />
+            <Route path="inventory/finished-goods" element={<FinishedGoodsPage />} />
             <Route path="inventory/ledger" element={<StockLedgerPage />} />
+            <Route path="inventory/adjustments" element={<StockAdjustmentsPage />} />
+            <Route path="inventory/valuation" element={<InventoryValuationPage />} />
+            <Route path="inventory/low-stock" element={<LowStockAlertsPage />} />
+            <Route path="inventory/reconciliation" element={<StockReconciliationPage />} />
+            <Route path="inventory/opening-stock" element={<OpeningStockPage />} />
 
             {/* Payments & Ageing */}
             <Route path="payments" element={<PaymentsListPage />} />
