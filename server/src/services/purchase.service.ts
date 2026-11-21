@@ -48,6 +48,8 @@ export class PurchaseService {
 
         const qty = item.quantity;
         const rate = item.unitPrice;
+        if (qty <= 0) throw new AppError('Purchase item quantity must be greater than zero.');
+        if (rate < 0) throw new AppError('Purchase item unit price cannot be negative.');
         const gstRate = item.gstRate !== undefined ? item.gstRate : 5.0;
         const taxable = Math.round(qty * rate * 100) / 100;
         const gst = Math.round((taxable * (gstRate / 100)) * 100) / 100;

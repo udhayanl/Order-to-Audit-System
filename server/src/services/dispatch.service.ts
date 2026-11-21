@@ -31,6 +31,9 @@ export class DispatchService {
     if (order.status === OrderStatus.DISPATCHED) {
       throw new AppError('Order is already dispatched.');
     }
+    if (order.status === OrderStatus.REJECTED) {
+      throw new AppError('Cannot dispatch a rejected order.');
+    }
 
     return prisma.$transaction(async (tx) => {
       // 1. Verify stock availability for all items
