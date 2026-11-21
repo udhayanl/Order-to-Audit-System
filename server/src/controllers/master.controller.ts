@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
-import { Role } from '@prisma/client';
+import { Role, ItemType } from '@prisma/client';
 import prisma from '../db/client.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { InventoryService } from '../services/inventory.service.js';
 
 export class MasterController {
   // PRODUCTS
@@ -13,7 +14,19 @@ export class MasterController {
         include: { category: true },
         orderBy: { name: 'asc' },
       });
-      res.json({ success: true, data: products });
+
+      const enriched = await Promise.all(
+        products.map(async (p) => {
+          const currentStock = await InventoryService.getCurrentStock(ItemType.FINISHED_GOOD, p.id);
+          return {
+            ...p,
+            currentStock,
+            isLowStock: currentStock <= Number(p.reorderLevel),
+          };
+        })
+      );
+
+      res.json({ success: true, data: enriched });
     } catch (err) { next(err); }
   }
 
@@ -90,7 +103,18 @@ export class MasterController {
   static async getRawMaterials(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const materials = await prisma.rawMaterial.findMany({ orderBy: { name: 'asc' } });
-      res.json({ success: true, data: materials });
+      const enriched = await Promise.all(
+        materials.map(async (rm) => {
+          const currentStock = await InventoryService.getCurrentStock(ItemType.RAW_MATERIAL, rm.id);
+          return {
+            ...rm,
+            currentStock,
+            isLowStock: currentStock <= Number(rm.reorderLevel),
+            stockValue: Math.round(currentStock * Number(rm.purchasePrice) * 100) / 100,
+          };
+        })
+      );
+      res.json({ success: true, data: enriched });
     } catch (err) { next(err); }
   }
 
@@ -113,7 +137,17 @@ export class MasterController {
   static async getPackagingMaterials(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const items = await prisma.packagingMaterial.findMany({ orderBy: { name: 'asc' } });
-      res.json({ success: true, data: items });
+      const enriched = await Promise.all(
+        items.map(async (pkg) => {
+          const currentStock = await InventoryService.getCurrentStock(ItemType.PACKAGING, pkg.id);
+          return {
+            ...pkg,
+            currentStock,
+            stockValue: Math.round(currentStock * Number(pkg.purchasePrice) * 100) / 100,
+          };
+        })
+      );
+      res.json({ success: true, data: enriched });
     } catch (err) { next(err); }
   }
 
