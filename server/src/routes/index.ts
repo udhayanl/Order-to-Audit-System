@@ -23,55 +23,106 @@ router.get('/auth/me', authenticateJWT, AuthController.getMe);
 // ================= MASTER DATA ROUTES =================
 // Product Categories
 router.get('/master/categories', authenticateJWT, MasterController.getCategories);
+router.get('/categories', authenticateJWT, MasterController.getCategories);
 router.post('/master/categories', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createCategory);
+router.post('/categories', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createCategory);
 router.put('/master/categories/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateCategory);
+router.put('/categories/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateCategory);
 router.delete('/master/categories/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCategory);
+router.delete('/categories/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCategory);
 
 // Products
 router.get('/master/products', authenticateJWT, MasterController.getProducts);
+router.get('/products', authenticateJWT, MasterController.getProducts);
 router.get('/master/products/:id', authenticateJWT, MasterController.getProductById);
+router.get('/products/:id', authenticateJWT, MasterController.getProductById);
 router.post('/master/products', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createProduct);
+router.post('/products', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createProduct);
 router.put('/master/products/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateProduct);
+router.put('/products/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateProduct);
+router.patch('/master/products/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchProductStatus);
+router.patch('/products/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchProductStatus);
 router.delete('/master/products/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteProduct);
+router.delete('/products/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteProduct);
+router.get('/products/:id/boms', authenticateJWT, MasterController.getProductBOMs);
 
 // Customers
 router.get('/master/customers', authenticateJWT, MasterController.getCustomers);
+router.get('/customers', authenticateJWT, MasterController.getCustomers);
 router.get('/master/customers/:id', authenticateJWT, MasterController.getCustomerById);
+router.get('/customers/:id', authenticateJWT, MasterController.getCustomerById);
 router.post('/master/customers', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createCustomer);
+router.post('/customers', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createCustomer);
 router.put('/master/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateCustomer);
+router.put('/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateCustomer);
+router.patch('/master/customers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchCustomerStatus);
+router.patch('/customers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchCustomerStatus);
 router.delete('/master/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCustomer);
+router.delete('/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCustomer);
 
 // Suppliers
 router.get('/master/suppliers', authenticateJWT, MasterController.getSuppliers);
+router.get('/suppliers', authenticateJWT, MasterController.getSuppliers);
 router.get('/master/suppliers/:id', authenticateJWT, MasterController.getSupplierById);
+router.get('/suppliers/:id', authenticateJWT, MasterController.getSupplierById);
 router.post('/master/suppliers', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createSupplier);
+router.post('/suppliers', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createSupplier);
 router.put('/master/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateSupplier);
+router.put('/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.updateSupplier);
+router.patch('/master/suppliers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchSupplierStatus);
+router.patch('/suppliers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchSupplierStatus);
 router.delete('/master/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteSupplier);
+router.delete('/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteSupplier);
 
 // Raw Materials
 router.get('/master/raw-materials', authenticateJWT, MasterController.getRawMaterials);
+router.get('/raw-materials', authenticateJWT, MasterController.getRawMaterials);
 router.get('/master/raw-materials/:id', authenticateJWT, MasterController.getRawMaterialById);
+router.get('/raw-materials/:id', authenticateJWT, MasterController.getRawMaterialById);
 router.post('/master/raw-materials', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createRawMaterial);
+router.post('/raw-materials', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createRawMaterial);
 router.put('/master/raw-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updateRawMaterial);
+router.put('/raw-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updateRawMaterial);
+router.patch('/master/raw-materials/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.patchRawMaterialStatus);
+router.patch('/raw-materials/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.patchRawMaterialStatus);
 router.delete('/master/raw-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deleteRawMaterial);
+router.delete('/raw-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deleteRawMaterial);
 
 // Packaging Materials
 router.get('/master/packaging-materials', authenticateJWT, MasterController.getPackagingMaterials);
+router.get('/packaging-materials', authenticateJWT, MasterController.getPackagingMaterials);
 router.get('/master/packaging-materials/:id', authenticateJWT, MasterController.getPackagingMaterialById);
+router.get('/packaging-materials/:id', authenticateJWT, MasterController.getPackagingMaterialById);
 router.post('/master/packaging-materials', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createPackagingMaterial);
+router.post('/packaging-materials', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createPackagingMaterial);
 router.put('/master/packaging-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updatePackagingMaterial);
+router.put('/packaging-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updatePackagingMaterial);
+router.patch('/master/packaging-materials/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.patchPackagingStatus);
+router.patch('/packaging-materials/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.patchPackagingStatus);
 router.delete('/master/packaging-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deletePackagingMaterial);
+router.delete('/packaging-materials/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deletePackagingMaterial);
 
 // Bill of Materials (BOM)
 router.get('/master/boms', authenticateJWT, MasterController.getBOMs);
+router.get('/boms', authenticateJWT, MasterController.getBOMs);
 router.get('/master/boms/:id', authenticateJWT, MasterController.getBOMById);
+router.get('/boms/:id', authenticateJWT, MasterController.getBOMById);
 router.post('/master/boms', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createBOM);
+router.post('/boms', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.createBOM);
 router.put('/master/boms/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updateBOM);
+router.put('/boms/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.updateBOM);
+router.post('/master/boms/:id/activate', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.activateBOM);
+router.post('/boms/:id/activate', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.activateBOM);
 router.delete('/master/boms/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deleteBOM);
+router.delete('/boms/:id', authenticateJWT, requireRole(Role.ADMIN, Role.PRODUCTION_SUPERVISOR, Role.OWNER), MasterController.deleteBOM);
 
 // Units of Measure & Conversions
 router.get('/master/uom', authenticateJWT, MasterController.getUOMs);
+router.get('/units', authenticateJWT, MasterController.getUnits);
+router.post('/units', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createUnit);
 router.post('/master/uom/convert', authenticateJWT, MasterController.convertUOM);
+router.get('/unit-conversions', authenticateJWT, MasterController.getUnitConversions);
+router.post('/unit-conversions', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createUnitConversion);
 
 // ================= ORDER ROUTES =================
 router.post('/orders', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.createOrder);

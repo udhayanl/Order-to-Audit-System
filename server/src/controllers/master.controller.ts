@@ -1127,4 +1127,184 @@ export class MasterController {
       });
     } catch (err) { next(err); }
   }
+
+  // ==========================================
+  // STATUS TOGGLES & BOM WORKFLOWS
+  // ==========================================
+  static async patchProductStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      const product = await prisma.product.update({
+        where: { id },
+        data: { active: active !== undefined ? Boolean(active) : true },
+      });
+      res.json({ success: true, data: product });
+    } catch (err) { next(err); }
+  }
+
+  static async patchCustomerStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      const customer = await prisma.customer.update({
+        where: { id },
+        data: { active: active !== undefined ? Boolean(active) : true },
+      });
+      res.json({ success: true, data: customer });
+    } catch (err) { next(err); }
+  }
+
+  static async patchSupplierStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      const supplier = await prisma.supplier.update({
+        where: { id },
+        data: { active: active !== undefined ? Boolean(active) : true },
+      });
+      res.json({ success: true, data: supplier });
+    } catch (err) { next(err); }
+  }
+
+  static async patchRawMaterialStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      const material = await prisma.rawMaterial.update({
+        where: { id },
+        data: { active: active !== undefined ? Boolean(active) : true },
+      });
+      res.json({ success: true, data: material });
+    } catch (err) { next(err); }
+  }
+
+  static async patchPackagingStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      const item = await prisma.packagingMaterial.update({
+        where: { id },
+        data: { active: active !== undefined ? Boolean(active) : true },
+      });
+      res.json({ success: true, data: item });
+    } catch (err) { next(err); }
+  }
+
+  static async activateBOM(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const bom = await prisma.bOM.findUnique({ where: { id } });
+      if (!bom) throw new AppError('BOM not found.', 404);
+
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.bOM.updateMany({
+          where: { productId: bom.productId },
+          data: { active: false, status: 'INACTIVE' },
+        });
+        return tx.bOM.update({
+          where: { id },
+          data: { active: true, status: 'ACTIVE' },
+          include: { product: true, items: true },
+        });
+      });
+
+      await AuditService.log(null, {
+        userId: req.user?.id,
+        action: 'ACTIVATE_BOM',
+        entityType: 'BOM',
+        entityId: id,
+        newValues: updated,
+      });
+
+      res.json({ success: true, data: updated, message: `BOM ${bom.name} (${bom.version}) is now active.` });
+    } catch (err) { next(err); }
+  }
+
+  static async getProductBOMs(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const boms = await prisma.bOM.findMany({
+        where: { productId: id },
+        include: {
+          items: {
+            include: { rawMaterial: true, packagingMaterial: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      res.json({ success: true, data: boms });
+    } catch (err) { next(err); }
+  }
+
+  static async getUnits(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      let dbUnits = await prisma.unit.findMany({ orderBy: { code: 'asc' } });
+      if (dbUnits.length === 0) {
+        const defaultUnits = [
+          { code: 'kg', name: 'Kilograms', category: 'WEIGHT', baseUnit: true },
+          { code: 'g', name: 'Grams', category: 'WEIGHT', baseUnit: false },
+          { code: 'litre', name: 'Litres', category: 'VOLUME', baseUnit: true },
+          { code: 'ml', name: 'Millilitres', category: 'VOLUME', baseUnit: false },
+          { code: 'pieces', name: 'Pieces', category: 'COUNT', baseUnit: true },
+          { code: 'packets', name: 'Packets', category: 'COUNT', baseUnit: false },
+          { code: 'cartons', name: 'Cartons', category: 'COUNT', baseUnit: false },
+        ];
+        await prisma.unit.createMany({ data: defaultUnits, skipDuplicates: true });
+        dbUnits = await prisma.unit.findMany({ orderBy: { code: 'asc' } });
+      }
+      res.json({ success: true, data: dbUnits });
+    } catch (err) { next(err); }
+  }
+
+  static async createUnit(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { code, name, category, baseUnit } = req.body;
+      if (!code || !name) throw new AppError('Unit code and name are required.', 400);
+      const unit = await prisma.unit.create({
+        data: {
+          code: code.trim().toLowerCase(),
+          name: name.trim(),
+          category: category ? category.trim().toUpperCase() : 'COUNT',
+          baseUnit: Boolean(baseUnit),
+        },
+      });
+      res.status(201).json({ success: true, data: unit });
+    } catch (err) { next(err); }
+  }
+
+  static async getUnitConversions(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const conversions = await prisma.unitConversion.findMany({ orderBy: { fromUnit: 'asc' } });
+      res.json({ success: true, data: conversions });
+    } catch (err) { next(err); }
+  }
+
+  static async createUnitConversion(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { fromUnit, toUnit, factor, notes } = req.body;
+      if (!fromUnit || !toUnit || factor === undefined) {
+        throw new AppError('From Unit, To Unit, and Factor are required.', 400);
+      }
+      const conversion = await prisma.unitConversion.upsert({
+        where: {
+          fromUnit_toUnit: {
+            fromUnit: fromUnit.trim().toLowerCase(),
+            toUnit: toUnit.trim().toLowerCase(),
+          },
+        },
+        create: {
+          fromUnit: fromUnit.trim().toLowerCase(),
+          toUnit: toUnit.trim().toLowerCase(),
+          factor: new Prisma.Decimal(factor),
+          notes: notes?.trim() || null,
+        },
+        update: {
+          factor: new Prisma.Decimal(factor),
+          notes: notes?.trim() || null,
+        },
+      });
+      res.status(201).json({ success: true, data: conversion });
+    } catch (err) { next(err); }
+  }
 }

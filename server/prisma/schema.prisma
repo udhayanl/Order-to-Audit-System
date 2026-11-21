@@ -92,13 +92,19 @@ model Customer {
   name            String
   type            CustomerType @default(RETAILER)
   gstin           String?
+  contactPerson   String?
   billingAddress  String
   shippingAddress String
+  city            String?
+  district        String?
   state           String       @default("Tamil Nadu")
   stateCode       String       @default("33")
+  pincode         String?
   contactNumber   String
   email           String?
   creditLimit     Decimal      @default(0.0) @db.Decimal(12, 2)
+  paymentTerms    String?      @default("30 Days")
+  active          Boolean      @default(true)
   salesmanId      String?
   salesman        User?        @relation("SalesmanCustomers", fields: [salesmanId], references: [id])
   createdAt       DateTime     @default(now())
@@ -117,11 +123,15 @@ model Supplier {
   name          String
   gstin         String?
   address       String
+  city          String?
   state         String     @default("Tamil Nadu")
   stateCode     String     @default("33")
+  pincode       String?
   contactPerson String?
   contactNumber String
   email         String?
+  paymentTerms  String?    @default("30 Days")
+  active        Boolean    @default(true)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -139,6 +149,7 @@ model Product {
   id           String          @id @default(uuid())
   sku          String          @unique
   name         String
+  description  String?
   categoryId   String?
   category     ProductCategory? @relation(fields: [categoryId], references: [id])
   packSize     String          // e.g. "200 g"
@@ -164,10 +175,13 @@ model RawMaterial {
   id           String    @id @default(uuid())
   code         String    @unique
   name         String
+  category     String?
+  description  String?
   uom          String    // "kg", "litre", "g", etc.
   openingStock Decimal   @default(0.0) @db.Decimal(12, 3)
   reorderLevel Decimal   @default(10.0) @db.Decimal(12, 3)
   purchasePrice Decimal  @default(0.0) @db.Decimal(12, 2)
+  active       Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -182,9 +196,12 @@ model PackagingMaterial {
   id            String    @id @default(uuid())
   code          String    @unique
   name          String
+  packagingType String?
   uom           String    // "pieces", "cartons"
   openingStock  Decimal   @default(0.0) @db.Decimal(12, 2)
+  reorderLevel  Decimal   @default(50.0) @db.Decimal(12, 2)
   purchasePrice Decimal   @default(0.0) @db.Decimal(12, 2)
+  active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -207,7 +224,9 @@ model BOM {
   yieldUnit     String    @default("packets")
   effectiveDate DateTime  @default(now())
   active        Boolean   @default(true)
+  status        String    @default("ACTIVE") // DRAFT, ACTIVE, INACTIVE
   notes         String?
+  createdById   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -230,6 +249,26 @@ model BOMItem {
   unit                String
 
   @@index([bomId])
+}
+
+model Unit {
+  id          String   @id @default(uuid())
+  code        String   @unique // "kg", "g", "litre", "ml", "pieces", "packets", "cartons"
+  name        String
+  category    String   // "WEIGHT", "VOLUME", "COUNT"
+  baseUnit    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model UnitConversion {
+  id          String   @id @default(uuid())
+  fromUnit    String
+  toUnit      String
+  factor      Decimal  @db.Decimal(12, 4)
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@unique([fromUnit, toUnit])
 }
 
 model Purchase {

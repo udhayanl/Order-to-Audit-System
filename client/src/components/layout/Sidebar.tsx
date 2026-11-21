@@ -264,25 +264,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             Master Data
           </div>
           <nav className="space-y-1">
+            <NavLink to="/products" onClick={handleNavClick} className={linkClass}>
+              <Package className="w-4 h-4" />
+              Products & Categories
+            </NavLink>
             <NavLink to="/customers" onClick={handleNavClick} className={linkClass}>
               <Users className="w-4 h-4" />
               Customers
             </NavLink>
-            <NavLink to="/products" onClick={handleNavClick} className={linkClass}>
-              <Package className="w-4 h-4" />
-              Products & Rates
+            <NavLink to="/inventory/raw" onClick={handleNavClick} className={linkClass}>
+              <Archive className="w-4 h-4" />
+              Raw Materials
+            </NavLink>
+            <NavLink to="/inventory/packaging" onClick={handleNavClick} className={linkClass}>
+              <Layers className="w-4 h-4" />
+              Packaging Materials
             </NavLink>
             <NavLink to="/suppliers" onClick={handleNavClick} className={linkClass}>
-              <Archive className="w-4 h-4" />
+              <Truck className="w-4 h-4" />
               Suppliers
             </NavLink>
             <NavLink to="/boms" onClick={handleNavClick} className={linkClass}>
-              <Layers className="w-4 h-4" />
-              Bill of Materials
-            </NavLink>
-            <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
-              <History className="w-4 h-4" />
-              Stock Ledger
+              <Settings className="w-4 h-4" />
+              Bill of Materials (BOM)
             </NavLink>
           </nav>
         </div>
