@@ -14,6 +14,7 @@
     "benchmark": "tsx src/scripts/run-benchmark.ts",
     "audit:bom": "tsx src/scripts/audit-bom-production.ts",
     "evaluate": "tsx src/scripts/nit-evaluator.ts",
+    "test:masters": "tsx src/tests/master-crud.test.ts",
     "test": "tsx src/tests/run-all-tests.ts"
   },
   "dependencies": {
