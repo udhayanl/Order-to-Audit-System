@@ -13,6 +13,13 @@ import { InvoicesListPage } from './pages/invoices/InvoicesListPage.js';
 import { InvoiceDetailPage } from './pages/invoices/InvoiceDetailPage.js';
 import { DispatchListPage } from './pages/dispatches/DispatchListPage.js';
 import { PurchasesListPage } from './pages/purchases/PurchasesListPage.js';
+import { ProductionDashboardPage } from './pages/production/ProductionDashboardPage.js';
+import { ProductionOrdersPage } from './pages/production/ProductionOrdersPage.js';
+import { ProductionOrderDetailPage } from './pages/production/ProductionOrderDetailPage.js';
+import { MaterialIssuesPage } from './pages/production/MaterialIssuesPage.js';
+import { ProductionExecutionPage } from './pages/production/ProductionExecutionPage.js';
+import { QualityControlPage } from './pages/production/QualityControlPage.js';
+import { BatchTraceabilityPage } from './pages/production/BatchTraceabilityPage.js';
 import { ProductionRunsPage } from './pages/production/ProductionRunsPage.js';
 import { NewProductionRunPage } from './pages/production/NewProductionRunPage.js';
 import { BOMListPage } from './pages/production/BOMListPage.js';
@@ -84,6 +91,14 @@ export const App: React.FC = () => {
             <Route path="goods-receipts" element={<PurchasesListPage />} />
 
             {/* Production */}
+            <Route path="production" element={<ProductionDashboardPage />} />
+            <Route path="production/dashboard" element={<ProductionDashboardPage />} />
+            <Route path="production/orders" element={<ProductionOrdersPage />} />
+            <Route path="production/orders/:id" element={<ProductionOrderDetailPage />} />
+            <Route path="production/material-issues" element={<MaterialIssuesPage />} />
+            <Route path="production/executions" element={<ProductionExecutionPage />} />
+            <Route path="production/quality" element={<QualityControlPage />} />
+            <Route path="production/traceability" element={<BatchTraceabilityPage />} />
             <Route path="production/runs" element={<ProductionRunsPage />} />
             <Route path="production/new" element={<NewProductionRunPage />} />
             <Route path="boms" element={<BOMListPage />} />

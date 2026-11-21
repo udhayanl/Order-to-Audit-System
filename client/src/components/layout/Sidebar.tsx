@@ -21,6 +21,7 @@ import {
   Shield,
   ShieldCheck,
   Boxes,
+  Factory,
   X,
 } from 'lucide-react';
 
@@ -142,6 +143,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <DollarSign className="w-4 h-4" />
               Payments & Ageing
             </NavLink>
+            <NavLink to="/production/orders" onClick={handleNavClick} className={linkClass}>
+              <Factory className="w-4 h-4 text-indigo-600" />
+              Production Orders
+            </NavLink>
+            <NavLink to="/production/traceability" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4 text-blue-600" />
+              Batch Traceability
+            </NavLink>
           </nav>
         </div>
       )}
@@ -153,13 +162,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             Manufacturing
           </div>
           <nav className="space-y-1">
-            <NavLink to="/production/new" onClick={handleNavClick} className={linkClass}>
-              <PlusCircle className="w-4 h-4 text-emerald-600" />
-              New Production Run
+            <NavLink to="/production" onClick={handleNavClick} className={linkClass}>
+              <Factory className="w-4 h-4 text-indigo-600" />
+              Production Dashboard
+            </NavLink>
+            <NavLink to="/production/orders" onClick={handleNavClick} className={linkClass}>
+              <ClipboardList className="w-4 h-4 text-indigo-600" />
+              Production Orders
+            </NavLink>
+            <NavLink to="/production/material-issues" onClick={handleNavClick} className={linkClass}>
+              <Boxes className="w-4 h-4 text-emerald-600" />
+              Material Issues
+            </NavLink>
+            <NavLink to="/production/executions" onClick={handleNavClick} className={linkClass}>
+              <PlusCircle className="w-4 h-4 text-amber-600" />
+              Batch Execution
+            </NavLink>
+            <NavLink to="/production/quality" onClick={handleNavClick} className={linkClass}>
+              <ShieldCheck className="w-4 h-4 text-purple-600" />
+              Quality Control
+            </NavLink>
+            <NavLink to="/production/traceability" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4 text-blue-600" />
+              Batch Traceability
             </NavLink>
             <NavLink to="/production/runs" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
-              Production History
+              Run History
             </NavLink>
             <NavLink to="/boms" onClick={handleNavClick} className={linkClass}>
               <Layers className="w-4 h-4" />
@@ -172,10 +201,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             <NavLink to="/inventory/packaging" onClick={handleNavClick} className={linkClass}>
               <Package className="w-4 h-4" />
               Packaging Stock
-            </NavLink>
-            <NavLink to="/purchases" onClick={handleNavClick} className={linkClass}>
-              <Archive className="w-4 h-4" />
-              Material Receipts
             </NavLink>
           </nav>
         </div>
@@ -238,6 +263,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             <NavLink to="/production/runs" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
               Factory Production
+            </NavLink>
+            <NavLink to="/production/traceability" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4 text-blue-600" />
+              Batch Traceability
             </NavLink>
             <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
               <History className="w-4 h-4" />

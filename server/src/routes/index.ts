@@ -148,6 +148,41 @@ router.post('/dispatches', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER),
 router.get('/dispatches', authenticateJWT, DispatchController.getDispatches);
 
 // ================= PRODUCTION ROUTES =================
+// Production Dashboard
+router.get('/production/dashboard/summary', authenticateJWT, ProductionController.getDashboardSummary);
+
+// Production Orders
+router.get('/production/orders', authenticateJWT, ProductionController.getOrders);
+router.post('/production/orders', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.createOrder);
+router.get('/production/orders/:id', authenticateJWT, ProductionController.getOrderById);
+router.post('/production/orders/:id/submit', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.submitOrder);
+router.post('/production/orders/:id/approve', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.PRODUCTION_SUPERVISOR), ProductionController.approveOrder);
+router.post('/production/orders/:id/cancel', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.PRODUCTION_SUPERVISOR), ProductionController.cancelOrder);
+router.post('/production/orders/:id/reserve-materials', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.reserveMaterials);
+router.post('/production/orders/:id/release-reservations', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.releaseReservations);
+router.get('/production/orders/:id/material-requirements', authenticateJWT, ProductionController.getMaterialRequirements);
+
+// Material Issues & Returns
+router.get('/production/material-issues', authenticateJWT, ProductionController.getMaterialIssues);
+router.post('/production/material-issues', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.createMaterialIssue);
+router.post('/production/material-issues/:id/return', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.returnUnusedMaterial);
+
+// Production Executions & Output
+router.get('/production/executions', authenticateJWT, ProductionController.getExecutions);
+router.post('/production/executions', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.startExecution);
+router.post('/production/executions/:id/pause', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.pauseExecution);
+router.post('/production/executions/:id/resume', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.resumeExecution);
+router.get('/production/outputs', authenticateJWT, ProductionController.getOutputs);
+router.post('/production/outputs', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.postProductionOutput);
+
+// Quality Control
+router.get('/production/quality-inspections', authenticateJWT, ProductionController.getQualityInspections);
+router.post('/production/quality-inspections', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.recordQualityInspection);
+
+// Batch Traceability
+router.get('/production/batches/:identifier/trace', authenticateJWT, ProductionController.traceBatch);
+
+// Legacy routes for tests/benchmarks
 router.post('/production/calculate-planned', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.calculatePlanned);
 router.post('/production/runs', authenticateJWT, requireRole(Role.PRODUCTION_SUPERVISOR, Role.ADMIN, Role.OWNER), ProductionController.createRun);
 router.get('/production/runs', authenticateJWT, ProductionController.getRuns);

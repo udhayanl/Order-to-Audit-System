@@ -19,8 +19,17 @@ export async function seedDatabase(isReset = true) {
     await prisma.invoice.deleteMany();
     await prisma.salesOrderItem.deleteMany();
     await prisma.salesOrder.deleteMany();
+    await prisma.qualityInspection.deleteMany();
+    await prisma.productionOutput.deleteMany();
+    await prisma.productionExecution.deleteMany();
+    await prisma.materialIssueItem.deleteMany();
+    await prisma.materialIssue.deleteMany();
+    await prisma.materialReservation.deleteMany();
     await prisma.productionConsumption.deleteMany();
     await prisma.productionRun.deleteMany();
+    await prisma.productionBOMItemSnapshot.deleteMany();
+    await prisma.productionBOMSnapshot.deleteMany();
+    await prisma.productionOrder.deleteMany();
     await prisma.goodsReceiptItem.deleteMany();
     await prisma.goodsReceipt.deleteMany();
     await prisma.purchaseItem.deleteMany();
@@ -606,6 +615,7 @@ export async function seedDatabase(isReset = true) {
     supplierPkg,
     murukkuProduct,
     bom,
+    murukkuBOM: bom,
   };
 }
 

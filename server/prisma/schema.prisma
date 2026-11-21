@@ -107,6 +107,11 @@ model User {
   approvedAdjustments StockAdjustment[] @relation("ApprovedStockAdjustments")
   goodsReceipts    GoodsReceipt[]    @relation("UserGoodsReceipts")
   openingStockRecords OpeningStockRecord[] @relation("UserOpeningStock")
+  createdProductionOrders ProductionOrder[] @relation("CreatedProductionOrders")
+  approvedProductionOrders ProductionOrder[] @relation("ApprovedProductionOrders")
+  supervisedProductionOrders ProductionOrder[] @relation("SupervisedProductionOrders")
+  materialIssues   MaterialIssue[]   @relation("UserMaterialIssues")
+  inspectedQuality QualityInspection[] @relation("UserQualityInspections")
   auditLogs    AuditLog[]
 }
 
@@ -190,6 +195,9 @@ model Product {
   invoiceItems InvoiceItem[]
   dispatchItems DispatchItem[]
   productionRuns ProductionRun[]
+  productionOrders ProductionOrder[]
+  productionOutputs ProductionOutput[]
+  qualityInspections QualityInspection[]
 
   @@index([sku])
 }
@@ -212,6 +220,8 @@ model RawMaterial {
   purchaseItems PurchaseItem[]
   consumptions ProductionConsumption[]
   goodsReceiptItems GoodsReceiptItem[]
+  bomItemSnapshots ProductionBOMItemSnapshot[]
+  materialIssueItems MaterialIssueItem[]
 
   @@index([code])
 }
@@ -233,6 +243,8 @@ model PackagingMaterial {
   purchaseItems PurchaseItem[]
   consumptions  ProductionConsumption[]
   goodsReceiptItems GoodsReceiptItem[]
+  bomItemSnapshots ProductionBOMItemSnapshot[]
+  materialIssueItems MaterialIssueItem[]
 
   @@index([code])
 }
@@ -257,6 +269,7 @@ model BOM {
 
   items         BOMItem[]
   productionRuns ProductionRun[]
+  productionOrders ProductionOrder[]
 
   @@index([productId])
 }
@@ -418,11 +431,225 @@ model ProductionRun {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
+  productionOrderId    String?
+  productionOrder      ProductionOrder? @relation(fields: [productionOrderId], references: [id])
   consumptions         ProductionConsumption[]
 
   @@index([runNumber])
   @@index([productId])
+  @@index([productionOrderId])
 }
+
+model ProductionOrder {
+  id                   String           @id @default(uuid())
+  orderNumber          String           @unique
+  productId            String
+  product              Product          @relation(fields: [productId], references: [id])
+  bomId                String
+  bom                  BOM              @relation(fields: [bomId], references: [id])
+  bomVersion           String           @default("v1.0")
+  plannedBatchQuantity Decimal          @db.Decimal(12, 2)
+  plannedOutputQuantity Decimal         @db.Decimal(12, 2)
+  actualOutputQuantity Decimal          @default(0.0) @db.Decimal(12, 2)
+  startDate            DateTime         @default(now())
+  expectedCompletionDate DateTime?
+  actualCompletionDate DateTime?
+  supervisorId         String?
+  supervisor           User?            @relation("SupervisedProductionOrders", fields: [supervisorId], references: [id])
+  priority             String           @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  notes                String?
+  status               String           @default("DRAFT") // DRAFT, PLANNED, APPROVED, MATERIALS_RESERVED, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
+  createdById          String
+  createdBy            User             @relation("CreatedProductionOrders", fields: [createdById], references: [id])
+  approvedById         String?
+  approvedBy           User?            @relation("ApprovedProductionOrders", fields: [approvedById], references: [id])
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  bomSnapshot          ProductionBOMSnapshot?
+  reservations         MaterialReservation[]
+  materialIssues       MaterialIssue[]
+  executions           ProductionExecution[]
+  outputs              ProductionOutput[]
+  qualityInspections   QualityInspection[]
+  productionRuns       ProductionRun[]
+
+  @@index([orderNumber])
+  @@index([productId])
+  @@index([status])
+}
+
+model ProductionBOMSnapshot {
+  id                String                     @id @default(uuid())
+  productionOrderId String                     @unique
+  productionOrder   ProductionOrder            @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  bomId             String
+  bomName           String
+  version           String
+  standardBatchSize Decimal                    @db.Decimal(12, 2)
+  expectedYield     Decimal                    @db.Decimal(12, 2)
+  yieldUnit         String
+  snapshotDate      DateTime                   @default(now())
+
+  items             ProductionBOMItemSnapshot[]
+}
+
+model ProductionBOMItemSnapshot {
+  id                  String                 @id @default(uuid())
+  snapshotId          String
+  snapshot            ProductionBOMSnapshot  @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  itemType            ItemType
+  rawMaterialId       String?
+  rawMaterial         RawMaterial?           @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId String?
+  packagingMaterial   PackagingMaterial?     @relation(fields: [packagingMaterialId], references: [id])
+  materialName        String
+  materialCode        String
+  standardQuantity    Decimal                @db.Decimal(12, 3)
+  scaledQuantity      Decimal                @db.Decimal(12, 3)
+  unit                String
+
+  @@index([snapshotId])
+}
+
+model MaterialReservation {
+  id                String          @id @default(uuid())
+  productionOrderId String
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  itemType          ItemType
+  itemId            String
+  reservedQuantity  Decimal         @db.Decimal(12, 3)
+  unit              String
+  status            String          @default("ACTIVE") // ACTIVE, CONSUMED, RELEASED, CANCELLED
+  reservationDate   DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([productionOrderId])
+  @@index([itemId, itemType, status])
+}
+
+model MaterialIssue {
+  id                String              @id @default(uuid())
+  issueNumber       String              @unique
+  productionOrderId String
+  productionOrder   ProductionOrder     @relation(fields: [productionOrderId], references: [id])
+  issueDate         DateTime            @default(now())
+  issuedById        String
+  issuedBy          User                @relation("UserMaterialIssues", fields: [issuedById], references: [id])
+  status            String              @default("POSTED") // POSTED, CANCELLED
+  notes             String?
+  createdAt         DateTime            @default(now())
+
+  items             MaterialIssueItem[]
+
+  @@index([issueNumber])
+  @@index([productionOrderId])
+}
+
+model MaterialIssueItem {
+  id                     String             @id @default(uuid())
+  materialIssueId        String
+  materialIssue          MaterialIssue      @relation(fields: [materialIssueId], references: [id], onDelete: Cascade)
+  itemType               ItemType
+  rawMaterialId          String?
+  rawMaterial            RawMaterial?       @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId    String?
+  packagingMaterial      PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
+  requestedQuantity      Decimal            @db.Decimal(12, 3)
+  issuedQuantity         Decimal            @db.Decimal(12, 3)
+  returnedQuantity       Decimal            @default(0.0) @db.Decimal(12, 3)
+  actualConsumedQuantity Decimal            @default(0.0) @db.Decimal(12, 3)
+  unit                   String
+  unitCost               Decimal            @default(0.0) @db.Decimal(12, 2)
+  totalCost              Decimal            @default(0.0) @db.Decimal(12, 2)
+  stockLedgerId          String?
+
+  @@index([materialIssueId])
+}
+
+model ProductionExecution {
+  id                 String             @id @default(uuid())
+  productionOrderId  String
+  productionOrder    ProductionOrder    @relation(fields: [productionOrderId], references: [id])
+  batchNumber        String             @unique
+  productionDate     DateTime           @default(now())
+  startTime          DateTime?
+  endTime            DateTime?
+  supervisorId       String?
+  lineOrWorkstation  String?            @default("Line 1 - Frying & Packing")
+  plannedOutput      Decimal            @db.Decimal(12, 2)
+  actualOutput       Decimal            @default(0.0) @db.Decimal(12, 2)
+  goodOutput         Decimal            @default(0.0) @db.Decimal(12, 2)
+  rejectedOutput     Decimal            @default(0.0) @db.Decimal(12, 2)
+  wastageQuantity    Decimal            @default(0.0) @db.Decimal(12, 2)
+  status             String             @default("IN_PROGRESS") // IN_PROGRESS, PAUSED, COMPLETED, CANCELLED
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  outputs            ProductionOutput[]
+
+  @@index([batchNumber])
+  @@index([productionOrderId])
+}
+
+model ProductionOutput {
+  id                    String               @id @default(uuid())
+  outputNumber          String               @unique
+  productionOrderId     String
+  productionOrder       ProductionOrder      @relation(fields: [productionOrderId], references: [id])
+  productionExecutionId String?
+  productionExecution   ProductionExecution? @relation(fields: [productionExecutionId], references: [id])
+  batchNumber           String
+  productId             String
+  product               Product              @relation(fields: [productId], references: [id])
+  plannedOutput         Decimal              @db.Decimal(12, 2)
+  actualOutput          Decimal              @db.Decimal(12, 2)
+  goodPackets           Decimal              @db.Decimal(12, 2)
+  rejectedPackets       Decimal              @default(0.0) @db.Decimal(12, 2)
+  damagedPackets        Decimal              @default(0.0) @db.Decimal(12, 2)
+  outputDate            DateTime             @default(now())
+  manufacturingDate     DateTime             @default(now())
+  expiryDate            DateTime?
+  status                String               @default("POSTED") // POSTED
+  unitCost              Decimal              @default(0.0) @db.Decimal(12, 2)
+  totalValue            Decimal              @default(0.0) @db.Decimal(12, 2)
+  recordedById          String
+  approvedById          String?
+  createdAt             DateTime             @default(now())
+
+  @@index([outputNumber])
+  @@index([batchNumber])
+  @@index([productionOrderId])
+}
+
+model QualityInspection {
+  id                  String          @id @default(uuid())
+  inspectionNumber    String          @unique
+  batchNumber         String
+  productionOrderId   String
+  productionOrder     ProductionOrder @relation(fields: [productionOrderId], references: [id])
+  productId           String
+  product             Product         @relation(fields: [productId], references: [id])
+  inspectionDate      DateTime        @default(now())
+  inspectedQuantity   Decimal         @db.Decimal(12, 2)
+  acceptedQuantity    Decimal         @db.Decimal(12, 2)
+  rejectedQuantity    Decimal         @default(0.0) @db.Decimal(12, 2)
+  qualityStatus       String          @default("PASSED") // PENDING, PASSED, FAILED, CONDITIONAL
+  weightConsistency   String?         @default("Within ±2g specification")
+  packagingCondition  String?         @default("Hermetically sealed, no leakage")
+  appearance          String?         @default("Uniform golden brown color, crisp texture")
+  notes               String?
+  inspectorId         String
+  inspector           User            @relation("UserQualityInspections", fields: [inspectorId], references: [id])
+  createdAt           DateTime        @default(now())
+
+  @@index([inspectionNumber])
+  @@index([batchNumber])
+  @@index([productionOrderId])
+}
+
 
 model ProductionConsumption {
   id                        String             @id @default(uuid())
