@@ -16,6 +16,9 @@ import { AuditController } from '../controllers/audit.controller.js';
 
 const router = Router();
 
+// ================= SYSTEM HEALTH ROUTE =================
+router.get('/health', (req, res) => res.json({ status: 'healthy', timestamp: new Date().toISOString() }));
+
 // ================= AUTH ROUTES =================
 router.post('/auth/login', AuthController.login);
 router.get('/auth/me', authenticateJWT, AuthController.getMe);
