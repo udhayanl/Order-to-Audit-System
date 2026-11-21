@@ -1,0 +1,563 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SALESMAN
+  ADMIN
+  PRODUCTION_SUPERVISOR
+  ACCOUNTANT_AUDITOR
+  OWNER
+}
+
+enum CustomerType {
+  RETAILER
+  DISTRIBUTOR
+}
+
+enum OrderStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  INVOICED
+  DISPATCHED
+}
+
+enum InvoiceStatus {
+  POSTED
+  CANCELLED
+}
+
+enum StockMovementType {
+  OPENING_BALANCE
+  PURCHASE_RECEIPT
+  PRODUCTION_ISSUE
+  PRODUCTION_OUTPUT
+  DISPATCH
+  SALES_RETURN
+  STOCK_ADJUSTMENT
+  PURCHASE_RETURN
+}
+
+enum ItemType {
+  RAW_MATERIAL
+  PACKAGING
+  FINISHED_GOOD
+}
+
+enum VarianceStatus {
+  NORMAL
+  EXCEEDS_TOLERANCE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  UPI
+  CHEQUE
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  fullName     String
+  role         Role
+  phone        String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  customers    Customer[]    @relation("SalesmanCustomers")
+  salesOrders  SalesOrder[]  @relation("SalesmanOrders")
+  approvedOrders SalesOrder[] @relation("ApprovedOrders")
+  purchases    Purchase[]    @relation("UserPurchases")
+  productionRuns ProductionRun[] @relation("UserProductionRuns")
+  invoices     Invoice[]     @relation("UserInvoices")
+  payments     Payment[]     @relation("UserPayments")
+  creditNotes  CreditNote[]  @relation("UserCreditNotes")
+  dispatches   Dispatch[]    @relation("UserDispatches")
+  stockLedgers StockLedger[] @relation("UserStockLedgers")
+  auditLogs    AuditLog[]
+}
+
+model Customer {
+  id              String       @id @default(uuid())
+  name            String
+  type            CustomerType @default(RETAILER)
+  gstin           String?
+  billingAddress  String
+  shippingAddress String
+  state           String       @default("Tamil Nadu")
+  stateCode       String       @default("33")
+  contactNumber   String
+  email           String?
+  creditLimit     Decimal      @default(0.0) @db.Decimal(12, 2)
+  salesmanId      String?
+  salesman        User?        @relation("SalesmanCustomers", fields: [salesmanId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders          SalesOrder[]
+  invoices        Invoice[]
+  payments        Payment[]
+  creditNotes     CreditNote[]
+
+  @@index([salesmanId])
+}
+
+model Supplier {
+  id            String     @id @default(uuid())
+  name          String
+  gstin         String?
+  address       String
+  state         String     @default("Tamil Nadu")
+  stateCode     String     @default("33")
+  contactPerson String?
+  contactNumber String
+  email         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  purchases     Purchase[]
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+}
+
+model Product {
+  id           String          @id @default(uuid())
+  sku          String          @unique
+  name         String
+  categoryId   String?
+  category     ProductCategory? @relation(fields: [categoryId], references: [id])
+  packSize     String          // e.g. "200 g"
+  unit         String          @default("packets") // "packets", "cartons", "pieces"
+  sellingPrice Decimal         @db.Decimal(12, 2)
+  gstRate      Decimal         @default(5.0) @db.Decimal(5, 2)
+  hsnCode      String          @default("1905")
+  reorderLevel Decimal         @default(100) @db.Decimal(12, 2)
+  active       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  boms         BOM[]
+  orderItems   SalesOrderItem[]
+  invoiceItems InvoiceItem[]
+  dispatchItems DispatchItem[]
+  productionRuns ProductionRun[]
+
+  @@index([sku])
+}
+
+model RawMaterial {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  name         String
+  uom          String    // "kg", "litre", "g", etc.
+  openingStock Decimal   @default(0.0) @db.Decimal(12, 3)
+  reorderLevel Decimal   @default(10.0) @db.Decimal(12, 3)
+  purchasePrice Decimal  @default(0.0) @db.Decimal(12, 2)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  bomItems     BOMItem[]
+  purchaseItems PurchaseItem[]
+  consumptions ProductionConsumption[]
+
+  @@index([code])
+}
+
+model PackagingMaterial {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  name          String
+  uom           String    // "pieces", "cartons"
+  openingStock  Decimal   @default(0.0) @db.Decimal(12, 2)
+  purchasePrice Decimal   @default(0.0) @db.Decimal(12, 2)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  bomItems      BOMItem[]
+  purchaseItems PurchaseItem[]
+  consumptions  ProductionConsumption[]
+
+  @@index([code])
+}
+
+model BOM {
+  id            String    @id @default(uuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id])
+  name          String
+  version       String    @default("v1.0")
+  batchSize     Decimal   @db.Decimal(12, 2) // e.g. 200
+  batchUnit     String    @default("packets")
+  expectedYield Decimal   @db.Decimal(12, 2) // e.g. 200
+  yieldUnit     String    @default("packets")
+  effectiveDate DateTime  @default(now())
+  active        Boolean   @default(true)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  items         BOMItem[]
+  productionRuns ProductionRun[]
+
+  @@index([productId])
+}
+
+model BOMItem {
+  id                  String             @id @default(uuid())
+  bomId               String
+  bom                 BOM                @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  itemType            ItemType           // RAW_MATERIAL or PACKAGING
+  rawMaterialId       String?
+  rawMaterial         RawMaterial?       @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId String?
+  packagingMaterial   PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
+  standardQuantity    Decimal            @db.Decimal(12, 3)
+  unit                String
+
+  @@index([bomId])
+}
+
+model Purchase {
+  id             String         @id @default(uuid())
+  purchaseNumber String         @unique
+  supplierId     String
+  supplier       Supplier       @relation(fields: [supplierId], references: [id])
+  purchaseDate   DateTime       @default(now())
+  totalTaxable   Decimal        @db.Decimal(12, 2)
+  totalGst       Decimal        @db.Decimal(12, 2)
+  grandTotal     Decimal        @db.Decimal(12, 2)
+  status         String         @default("RECEIVED") // RECEIVED, CANCELLED
+  notes          String?
+  createdById    String
+  createdBy      User           @relation("UserPurchases", fields: [createdById], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  items          PurchaseItem[]
+
+  @@index([purchaseNumber])
+  @@index([supplierId])
+}
+
+model PurchaseItem {
+  id                  String             @id @default(uuid())
+  purchaseId          String
+  purchase            Purchase           @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  itemType            ItemType           // RAW_MATERIAL or PACKAGING
+  rawMaterialId       String?
+  rawMaterial         RawMaterial?       @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId String?
+  packagingMaterial   PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
+  quantity            Decimal            @db.Decimal(12, 3)
+  unit                String
+  unitPrice           Decimal            @db.Decimal(12, 2)
+  gstRate             Decimal            @default(5.0) @db.Decimal(5, 2)
+  taxableAmount       Decimal            @db.Decimal(12, 2)
+  gstAmount           Decimal            @db.Decimal(12, 2)
+  totalAmount         Decimal            @db.Decimal(12, 2)
+
+  @@index([purchaseId])
+}
+
+model ProductionRun {
+  id                   String           @id @default(uuid())
+  runNumber            String           @unique
+  bomId                String
+  bom                  BOM              @relation(fields: [bomId], references: [id])
+  productId            String
+  product              Product          @relation(fields: [productId], references: [id])
+  runDate              DateTime         @default(now())
+  plannedBatchQuantity Decimal          @db.Decimal(12, 2)
+  expectedOutput       Decimal          @db.Decimal(12, 2)
+  actualGoodOutput     Decimal          @db.Decimal(12, 2)
+  damagedPouches       Decimal          @default(0.0) @db.Decimal(12, 2)
+  cartonsUsed          Decimal          @default(0.0) @db.Decimal(12, 2)
+  labourCost           Decimal          @default(0.0) @db.Decimal(12, 2)
+  powerCost            Decimal          @default(0.0) @db.Decimal(12, 2)
+  otherOverheads       Decimal          @default(0.0) @db.Decimal(12, 2)
+  totalMaterialCost    Decimal          @default(0.0) @db.Decimal(12, 2)
+  totalProductionCost  Decimal          @default(0.0) @db.Decimal(12, 2)
+  costPerPacket        Decimal          @default(0.0) @db.Decimal(12, 2)
+  yieldVariancePercent Decimal          @default(0.0) @db.Decimal(6, 2)
+  yieldVarianceStatus  VarianceStatus   @default(NORMAL)
+  status               String           @default("POSTED") // POSTED, CANCELLED
+  notes                String?
+  createdById          String
+  createdBy            User             @relation("UserProductionRuns", fields: [createdById], references: [id])
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  consumptions         ProductionConsumption[]
+
+  @@index([runNumber])
+  @@index([productId])
+}
+
+model ProductionConsumption {
+  id                        String             @id @default(uuid())
+  productionRunId           String
+  productionRun             ProductionRun      @relation(fields: [productionRunId], references: [id], onDelete: Cascade)
+  itemType                  ItemType
+  rawMaterialId             String?
+  rawMaterial               RawMaterial?       @relation(fields: [rawMaterialId], references: [id])
+  packagingMaterialId       String?
+  packagingMaterial         PackagingMaterial? @relation(fields: [packagingMaterialId], references: [id])
+  plannedQuantity           Decimal            @db.Decimal(12, 3)
+  actualQuantity            Decimal            @db.Decimal(12, 3)
+  unit                      String
+  consumptionVariancePercent Decimal           @default(0.0) @db.Decimal(6, 2)
+  varianceStatus            VarianceStatus     @default(NORMAL)
+  unitCost                  Decimal            @default(0.0) @db.Decimal(12, 2)
+  totalCost                 Decimal            @default(0.0) @db.Decimal(12, 2)
+
+  @@index([productionRunId])
+}
+
+model SalesOrder {
+  id              String           @id @default(uuid())
+  orderNumber     String           @unique
+  customerId      String
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  salesmanId      String
+  salesman        User             @relation("SalesmanOrders", fields: [salesmanId], references: [id])
+  orderDate       DateTime         @default(now())
+  status          OrderStatus      @default(SUBMITTED)
+  subtotal        Decimal          @db.Decimal(12, 2)
+  estimatedGst    Decimal          @db.Decimal(12, 2)
+  grandTotal      Decimal          @db.Decimal(12, 2)
+  orderNotes      String?
+  rejectionReason String?
+  approvedById    String?
+  approvedBy      User?            @relation("ApprovedOrders", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  items           SalesOrderItem[]
+  invoice         Invoice?
+  dispatch        Dispatch?
+
+  @@index([orderNumber])
+  @@index([customerId])
+  @@index([salesmanId])
+}
+
+model SalesOrderItem {
+  id            String     @id @default(uuid())
+  salesOrderId  String
+  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product    @relation(fields: [productId], references: [id])
+  quantity      Decimal    @db.Decimal(12, 2)
+  unitPrice     Decimal    @db.Decimal(12, 2)
+  gstRate       Decimal    @default(5.0) @db.Decimal(5, 2)
+  taxableAmount Decimal    @db.Decimal(12, 2)
+  gstAmount     Decimal    @db.Decimal(12, 2)
+  totalAmount   Decimal    @db.Decimal(12, 2)
+
+  @@index([salesOrderId])
+}
+
+model Invoice {
+  id                String         @id @default(uuid())
+  invoiceNumber     String         @unique
+  financialYear     String         // e.g. "2026-27"
+  orderId           String?        @unique
+  order             SalesOrder?    @relation(fields: [orderId], references: [id])
+  customerId        String
+  customer          Customer       @relation(fields: [customerId], references: [id])
+  invoiceDate       DateTime       @default(now())
+  dueDate           DateTime
+  billingAddress    String
+  shippingAddress   String
+  placeOfSupply     String         // "Tamil Nadu (33)" or "Karnataka (29)"
+  totalTaxable      Decimal        @db.Decimal(12, 2)
+  cgstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
+  sgstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
+  igstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
+  grandTotal        Decimal        @db.Decimal(12, 2)
+  paidAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
+  outstandingAmount Decimal        @db.Decimal(12, 2)
+  status            InvoiceStatus  @default(POSTED)
+  notes             String?
+  createdById       String
+  createdBy         User           @relation("UserInvoices", fields: [createdById], references: [id])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  items             InvoiceItem[]
+  creditNotes       CreditNote[]
+  allocations       PaymentAllocation[]
+  dispatches        Dispatch[]
+
+  @@index([invoiceNumber])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id            String   @id @default(uuid())
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  hsnCode       String   @default("1905")
+  description   String
+  quantity      Decimal  @db.Decimal(12, 2)
+  unit          String   @default("packets")
+  unitPrice     Decimal  @db.Decimal(12, 2)
+  taxableAmount Decimal  @db.Decimal(12, 2)
+  gstRate       Decimal  @default(5.0) @db.Decimal(5, 2)
+  cgstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
+  sgstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
+  igstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
+  totalAmount   Decimal  @db.Decimal(12, 2)
+
+  @@index([invoiceId])
+}
+
+model CreditNote {
+  id               String   @id @default(uuid())
+  creditNoteNumber String   @unique
+  invoiceId        String
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id])
+  customerId       String
+  customer         Customer @relation(fields: [customerId], references: [id])
+  issueDate        DateTime @default(now())
+  reason           String
+  totalAmount      Decimal  @db.Decimal(12, 2)
+  createdById      String
+  createdBy        User     @relation("UserCreditNotes", fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+
+  @@index([creditNoteNumber])
+}
+
+model Dispatch {
+  id             String         @id @default(uuid())
+  dispatchNumber String         @unique
+  orderId        String         @unique
+  order          SalesOrder     @relation(fields: [orderId], references: [id])
+  invoiceId      String?
+  invoice        Invoice?       @relation(fields: [invoiceId], references: [id])
+  dispatchDate   DateTime       @default(now())
+  vehicleNumber  String?
+  driverName     String?
+  remarks        String?
+  createdById    String
+  createdBy      User           @relation("UserDispatches", fields: [createdById], references: [id])
+  createdAt      DateTime       @default(now())
+
+  items          DispatchItem[]
+
+  @@index([dispatchNumber])
+}
+
+model DispatchItem {
+  id         String   @id @default(uuid())
+  dispatchId String
+  dispatch   Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Decimal  @db.Decimal(12, 2)
+
+  @@index([dispatchId])
+}
+
+model StockLedger {
+  id            String            @id @default(uuid())
+  itemType      ItemType
+  itemId        String            // rawMaterialId, packagingMaterialId, or productId
+  movementType  StockMovementType
+  quantity      Decimal           @db.Decimal(12, 3) // positive for additions, negative for deductions
+  balanceAfter  Decimal           @db.Decimal(12, 3)
+  unit          String
+  referenceType String            // "PURCHASE", "PRODUCTION_RUN", "DISPATCH", "ADJUSTMENT", "OPENING"
+  referenceId   String?
+  notes         String?
+  userId        String?
+  user          User?             @relation("UserStockLedgers", fields: [userId], references: [id])
+  createdAt     DateTime          @default(now())
+
+  @@index([itemType, itemId])
+  @@index([createdAt])
+}
+
+model InventoryValuationLayer {
+  id                String   @id @default(uuid())
+  itemType          ItemType
+  itemId            String
+  receivedDate      DateTime @default(now())
+  originalQuantity  Decimal  @db.Decimal(12, 3)
+  remainingQuantity Decimal  @db.Decimal(12, 3)
+  unitCost          Decimal  @db.Decimal(12, 2)
+  referenceType     String
+  referenceId       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([itemType, itemId, remainingQuantity])
+}
+
+model Payment {
+  id              String              @id @default(uuid())
+  paymentNumber   String              @unique
+  customerId      String
+  customer        Customer            @relation(fields: [customerId], references: [id])
+  paymentDate     DateTime            @default(now())
+  amount          Decimal             @db.Decimal(12, 2)
+  paymentMethod   PaymentMethod       @default(BANK_TRANSFER)
+  referenceNumber String?
+  notes           String?
+  createdById     String
+  createdBy       User                @relation("UserPayments", fields: [createdById], references: [id])
+  createdAt       DateTime            @default(now())
+
+  allocations     PaymentAllocation[]
+
+  @@index([paymentNumber])
+  @@index([customerId])
+}
+
+model PaymentAllocation {
+  id        String   @id @default(uuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+  @@index([invoiceId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  action         String   // "CREATE", "UPDATE", "APPROVE", "REJECT", "DISPATCH", "POST", "CANCEL"
+  entityType     String   // "ORDER", "INVOICE", "PRODUCTION_RUN", "PURCHASE", "PAYMENT", "STOCK"
+  entityId       String
+  previousValues String?  // JSON string
+  newValues      String?  // JSON string
+  ipAddress      String?
+  timestamp      DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+}
