@@ -40,14 +40,18 @@ export const InvoiceDetailPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href={`/api/invoices/${invoice.id}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={async () => {
+              try {
+                await api.downloadFile(`/invoices/${invoice.id}/pdf`, `Invoice-${invoice.invoiceNumber}.pdf`);
+              } catch (err: any) {
+                alert(`PDF download failed: ${err.message}`);
+              }
+            }}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
           >
             <Download className="w-4 h-4" /> Download Official PDF
-          </a>
+          </button>
         </div>
       </div>
 

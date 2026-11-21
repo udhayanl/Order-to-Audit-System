@@ -26,8 +26,12 @@ export const InvoicesListPage: React.FC = () => {
     fetchInvoices();
   }, []);
 
-  const handleDownloadPDF = (id: string, invoiceNumber: string) => {
-    window.open(`/api/invoices/${id}/pdf`, '_blank');
+  const handleDownloadPDF = async (id: string, invoiceNumber: string) => {
+    try {
+      await api.downloadFile(`/invoices/${id}/pdf`, `Invoice-${invoiceNumber}.pdf`);
+    } catch (err: any) {
+      alert(`PDF download failed: ${err.message}`);
+    }
   };
 
   const handleCancelInvoice = async () => {

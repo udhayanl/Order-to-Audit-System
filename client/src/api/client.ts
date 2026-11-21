@@ -80,6 +80,35 @@ export const api = {
   delete: <T = any>(url: string) => {
     return request<T>(url, { method: 'DELETE' });
   },
+  getToken: () => localStorage.getItem('factoryflow_token') || '',
+  downloadFile: async (url: string, defaultFilename = 'download') => {
+    const token = localStorage.getItem('factoryflow_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${BASE_URL}${url}`, { headers });
+    if (!res.ok) throw new Error(`Download failed: ${res.statusText}`);
+
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+
+    // Extract filename from Content-Disposition header if available
+    const disposition = res.headers.get('content-disposition');
+    let filename = defaultFilename;
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, '');
+      }
+    }
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
 };
 
 export default api;

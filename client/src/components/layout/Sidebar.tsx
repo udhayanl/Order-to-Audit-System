@@ -19,9 +19,15 @@ import {
   Download,
   AlertTriangle,
   Shield,
+  X,
 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const { user } = useAuth();
   const role = user?.role;
 
@@ -32,20 +38,52 @@ export const Sidebar: React.FC = () => {
         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
     }`;
 
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] flex flex-col p-4 space-y-6">
-      {/* 1. Core Section */}
-      <div>
-        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
-          Overview
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          aria-hidden="true"
+          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
+        />
+      )}
+
+      {/* Sidebar Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col p-4 space-y-5 shadow-2xl transition-transform duration-200 ease-in-out md:relative md:translate-x-0 md:min-h-[calc(100vh-4rem)] md:shadow-none md:z-10 overflow-y-auto ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Mobile Header with Close Button */}
+        <div className="flex items-center justify-between md:hidden pb-3 border-b border-gray-100">
+          <span className="font-bold text-sm text-gray-900">Navigation Menu</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <nav className="space-y-1">
-          <NavLink to="/dashboard" className={linkClass}>
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </NavLink>
-        </nav>
-      </div>
+
+        {/* 1. Core Section */}
+        <div>
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Overview
+          </div>
+          <nav className="space-y-1">
+            <NavLink to="/dashboard" onClick={handleNavClick} className={linkClass}>
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </NavLink>
+          </nav>
+        </div>
 
       {/* 2. Role-specific workflows */}
       {/* SALESMAN MENU */}
@@ -55,19 +93,19 @@ export const Sidebar: React.FC = () => {
             Sales Activities
           </div>
           <nav className="space-y-1">
-            <NavLink to="/orders/new" className={linkClass}>
+            <NavLink to="/orders/new" onClick={handleNavClick} className={linkClass}>
               <PlusCircle className="w-4 h-4 text-brand-600" />
               New Order
             </NavLink>
-            <NavLink to="/orders" className={linkClass}>
+            <NavLink to="/orders" onClick={handleNavClick} className={linkClass}>
               <ShoppingCart className="w-4 h-4" />
               My Orders
             </NavLink>
-            <NavLink to="/customers" className={linkClass}>
+            <NavLink to="/customers" onClick={handleNavClick} className={linkClass}>
               <Users className="w-4 h-4" />
               My Customers
             </NavLink>
-            <NavLink to="/products" className={linkClass}>
+            <NavLink to="/products" onClick={handleNavClick} className={linkClass}>
               <Package className="w-4 h-4" />
               Product Catalogue
             </NavLink>
@@ -82,23 +120,23 @@ export const Sidebar: React.FC = () => {
             Order & Dispatch
           </div>
           <nav className="space-y-1">
-            <NavLink to="/orders" className={linkClass}>
+            <NavLink to="/orders" onClick={handleNavClick} className={linkClass}>
               <ShoppingCart className="w-4 h-4" />
               Incoming Orders
             </NavLink>
-            <NavLink to="/invoices" className={linkClass}>
+            <NavLink to="/invoices" onClick={handleNavClick} className={linkClass}>
               <FileText className="w-4 h-4" />
               GST Invoices
             </NavLink>
-            <NavLink to="/dispatches" className={linkClass}>
+            <NavLink to="/dispatches" onClick={handleNavClick} className={linkClass}>
               <Truck className="w-4 h-4" />
               Dispatches
             </NavLink>
-            <NavLink to="/purchases" className={linkClass}>
+            <NavLink to="/purchases" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Raw Purchases
             </NavLink>
-            <NavLink to="/payments" className={linkClass}>
+            <NavLink to="/payments" onClick={handleNavClick} className={linkClass}>
               <DollarSign className="w-4 h-4" />
               Payments & Ageing
             </NavLink>
@@ -113,27 +151,27 @@ export const Sidebar: React.FC = () => {
             Manufacturing
           </div>
           <nav className="space-y-1">
-            <NavLink to="/production/new" className={linkClass}>
+            <NavLink to="/production/new" onClick={handleNavClick} className={linkClass}>
               <PlusCircle className="w-4 h-4 text-emerald-600" />
               New Production Run
             </NavLink>
-            <NavLink to="/production/runs" className={linkClass}>
+            <NavLink to="/production/runs" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
               Production History
             </NavLink>
-            <NavLink to="/boms" className={linkClass}>
+            <NavLink to="/boms" onClick={handleNavClick} className={linkClass}>
               <Layers className="w-4 h-4" />
               BOM Recipes
             </NavLink>
-            <NavLink to="/inventory/raw" className={linkClass}>
+            <NavLink to="/inventory/raw" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Raw Materials Stock
             </NavLink>
-            <NavLink to="/inventory/packaging" className={linkClass}>
+            <NavLink to="/inventory/packaging" onClick={handleNavClick} className={linkClass}>
               <Package className="w-4 h-4" />
               Packaging Stock
             </NavLink>
-            <NavLink to="/purchases" className={linkClass}>
+            <NavLink to="/purchases" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Material Receipts
             </NavLink>
@@ -148,35 +186,35 @@ export const Sidebar: React.FC = () => {
             Audit & Registers
           </div>
           <nav className="space-y-1">
-            <NavLink to="/reports/sales-register" className={linkClass}>
+            <NavLink to="/reports/sales-register" onClick={handleNavClick} className={linkClass}>
               <FileText className="w-4 h-4" />
               Sales Register
             </NavLink>
-            <NavLink to="/reports/gst-summary" className={linkClass}>
+            <NavLink to="/reports/gst-summary" onClick={handleNavClick} className={linkClass}>
               <TrendingUp className="w-4 h-4" />
               GST (GSTR-1 / 3B)
             </NavLink>
-            <NavLink to="/reports/purchase-register" className={linkClass}>
+            <NavLink to="/reports/purchase-register" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Purchase Register
             </NavLink>
-            <NavLink to="/inventory/ledger" className={linkClass}>
+            <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
               <History className="w-4 h-4" />
               Stock Ledger
             </NavLink>
-            <NavLink to="/reports/production" className={linkClass}>
+            <NavLink to="/reports/production" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
               Production Costing
             </NavLink>
-            <NavLink to="/reports/ageing" className={linkClass}>
+            <NavLink to="/reports/ageing" onClick={handleNavClick} className={linkClass}>
               <DollarSign className="w-4 h-4" />
               Outstanding Ageing
             </NavLink>
-            <NavLink to="/reports/export" className={linkClass}>
+            <NavLink to="/reports/export" onClick={handleNavClick} className={linkClass}>
               <Download className="w-4 h-4" />
               Export Centre
             </NavLink>
-            <NavLink to="/audit-logs" className={linkClass}>
+            <NavLink to="/audit-logs" onClick={handleNavClick} className={linkClass}>
               <Shield className="w-4 h-4" />
               Audit Log
             </NavLink>
@@ -191,27 +229,27 @@ export const Sidebar: React.FC = () => {
             Executive Controls
           </div>
           <nav className="space-y-1">
-            <NavLink to="/orders" className={linkClass}>
+            <NavLink to="/orders" onClick={handleNavClick} className={linkClass}>
               <ShoppingCart className="w-4 h-4" />
               Sales & Orders
             </NavLink>
-            <NavLink to="/production/runs" className={linkClass}>
+            <NavLink to="/production/runs" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
               Factory Production
             </NavLink>
-            <NavLink to="/inventory/ledger" className={linkClass}>
+            <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
               <History className="w-4 h-4" />
               Stock Ledger
             </NavLink>
-            <NavLink to="/reports/production" className={linkClass}>
+            <NavLink to="/reports/production" onClick={handleNavClick} className={linkClass}>
               <TrendingUp className="w-4 h-4" />
               Cost & Margins
             </NavLink>
-            <NavLink to="/reports/ageing" className={linkClass}>
+            <NavLink to="/reports/ageing" onClick={handleNavClick} className={linkClass}>
               <DollarSign className="w-4 h-4" />
               Receivables Ageing
             </NavLink>
-            <NavLink to="/audit-logs" className={linkClass}>
+            <NavLink to="/audit-logs" onClick={handleNavClick} className={linkClass}>
               <Shield className="w-4 h-4" />
               Audit Trail
             </NavLink>
@@ -226,23 +264,23 @@ export const Sidebar: React.FC = () => {
             Master Data
           </div>
           <nav className="space-y-1">
-            <NavLink to="/customers" className={linkClass}>
+            <NavLink to="/customers" onClick={handleNavClick} className={linkClass}>
               <Users className="w-4 h-4" />
               Customers
             </NavLink>
-            <NavLink to="/products" className={linkClass}>
+            <NavLink to="/products" onClick={handleNavClick} className={linkClass}>
               <Package className="w-4 h-4" />
               Products & Rates
             </NavLink>
-            <NavLink to="/suppliers" className={linkClass}>
+            <NavLink to="/suppliers" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Suppliers
             </NavLink>
-            <NavLink to="/boms" className={linkClass}>
+            <NavLink to="/boms" onClick={handleNavClick} className={linkClass}>
               <Layers className="w-4 h-4" />
               Bill of Materials
             </NavLink>
-            <NavLink to="/inventory/ledger" className={linkClass}>
+            <NavLink to="/inventory/ledger" onClick={handleNavClick} className={linkClass}>
               <History className="w-4 h-4" />
               Stock Ledger
             </NavLink>
@@ -256,5 +294,6 @@ export const Sidebar: React.FC = () => {
         <div>NIT Tiruchirappalli Internship</div>
       </div>
     </aside>
+  </>
   );
 };

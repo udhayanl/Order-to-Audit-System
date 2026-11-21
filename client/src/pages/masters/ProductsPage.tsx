@@ -35,6 +35,7 @@ export const ProductsPage: React.FC = () => {
                 <th className="p-3">Selling Price (Excl. Tax)</th>
                 <th className="p-3">HSN Code</th>
                 <th className="p-3">GST Rate</th>
+                <th className="p-3">Current Stock</th>
                 <th className="p-3">Reorder Level</th>
                 <th className="p-3">Status</th>
               </tr>
@@ -42,11 +43,11 @@ export const ProductsPage: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-400">Loading products...</td>
+                  <td colSpan={11} className="p-8 text-center text-gray-400">Loading products...</td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-400">No products found.</td>
+                  <td colSpan={11} className="p-8 text-center text-gray-400">No products found.</td>
                 </tr>
               ) : (
                 products.map((p) => (
@@ -61,6 +62,9 @@ export const ProductsPage: React.FC = () => {
                     </td>
                     <td className="p-3 font-semibold text-gray-800">{p.hsnCode}</td>
                     <td className="p-3 font-medium text-gray-700">{Number(p.gstRate)}%</td>
+                    <td className="p-3 font-bold text-gray-900">
+                      {p.currentStock !== undefined ? `${p.currentStock} ${p.unit}` : '—'}
+                    </td>
                     <td className="p-3">{Number(p.reorderLevel)} pkts</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
