@@ -232,7 +232,7 @@ export class InvoiceService {
     doc.text('CGST', 380, tableTop);
     doc.text('SGST', 430, tableTop);
     doc.text('IGST', 480, tableTop);
-    doc.text('Total (₹)', 520, tableTop, { align: 'right', width: 35 });
+    doc.text('Total (Rs.)', 510, tableTop, { align: 'right', width: 45 });
 
     doc.strokeColor('#9ca3af').lineWidth(0.5).moveTo(40, tableTop + 14).lineTo(555, tableTop + 14).stroke();
     doc.font('Helvetica').fontSize(8.5);
@@ -242,12 +242,12 @@ export class InvoiceService {
       doc.text(item.description, 45, rowY, { width: 130 });
       doc.text(item.hsnCode, 180, rowY);
       doc.text(`${item.quantity} ${item.unit}`, 230, rowY);
-      doc.text(`₹${Number(item.unitPrice).toFixed(2)}`, 270, rowY);
-      doc.text(`₹${Number(item.taxableAmount).toFixed(2)}`, 320, rowY);
-      doc.text(`₹${Number(item.cgstAmount).toFixed(2)}`, 380, rowY);
-      doc.text(`₹${Number(item.sgstAmount).toFixed(2)}`, 430, rowY);
-      doc.text(`₹${Number(item.igstAmount).toFixed(2)}`, 480, rowY);
-      doc.text(`₹${Number(item.totalAmount).toFixed(2)}`, 510, rowY, { align: 'right', width: 45 });
+      doc.text(`Rs. ${Number(item.unitPrice).toFixed(2)}`, 270, rowY);
+      doc.text(`Rs. ${Number(item.taxableAmount).toFixed(2)}`, 320, rowY);
+      doc.text(`Rs. ${Number(item.cgstAmount).toFixed(2)}`, 380, rowY);
+      doc.text(`Rs. ${Number(item.sgstAmount).toFixed(2)}`, 430, rowY);
+      doc.text(`Rs. ${Number(item.igstAmount).toFixed(2)}`, 480, rowY);
+      doc.text(`Rs. ${Number(item.totalAmount).toFixed(2)}`, 505, rowY, { align: 'right', width: 50 });
       rowY += 20;
     }
 
@@ -257,27 +257,27 @@ export class InvoiceService {
     // Totals Box
     doc.font('Helvetica-Bold').fontSize(9);
     doc.text(`Total Taxable Amount:`, 320, rowY);
-    doc.text(`₹${Number(invoice.totalTaxable).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
+    doc.text(`Rs. ${Number(invoice.totalTaxable).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
     rowY += 15;
 
     if (Number(invoice.cgstAmount) > 0) {
       doc.text(`CGST (2.5%):`, 320, rowY);
-      doc.text(`₹${Number(invoice.cgstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
+      doc.text(`Rs. ${Number(invoice.cgstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
       rowY += 15;
       doc.text(`SGST (2.5%):`, 320, rowY);
-      doc.text(`₹${Number(invoice.sgstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
+      doc.text(`Rs. ${Number(invoice.sgstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
       rowY += 15;
     }
 
     if (Number(invoice.igstAmount) > 0) {
       doc.text(`IGST (5%):`, 320, rowY);
-      doc.text(`₹${Number(invoice.igstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
+      doc.text(`Rs. ${Number(invoice.igstAmount).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
       rowY += 15;
     }
 
     doc.fontSize(11).fillColor('#15803d');
     doc.text(`Grand Total:`, 320, rowY);
-    doc.text(`₹${Number(invoice.grandTotal).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
+    doc.text(`Rs. ${Number(invoice.grandTotal).toFixed(2)}`, 480, rowY, { align: 'right', width: 75 });
     doc.fillColor('#000000');
 
     rowY += 40;
