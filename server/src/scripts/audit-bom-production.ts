@@ -1,4 +1,4 @@
-import { ItemType, StockMovementType, VarianceStatus } from '@prisma/client';
+import { ItemType, StockMovementType, VarianceStatus, PaymentMethod } from '@prisma/client';
 import prisma from '../db/client.js';
 import { seedDatabase } from './seed.js';
 import { PurchaseService } from '../services/purchase.service.js';
@@ -324,7 +324,7 @@ export async function auditBOMAndProduction() {
   } catch (err: any) {
     dispatchBlocked = true;
   }
-  record('Shortage Check', 'Order B (120 pkts)', 'Excess Dispatch Blocked', true, dispatchBlocked, dispatchBlocked);
+  record('Shortage Check', 'Order B (120 pkts)', 'Excess Dispatch Blocked', 'Blocked', dispatchBlocked ? 'Blocked' : 'Not Blocked', dispatchBlocked);
 
   // --------------------------------------------------------------------------
   // AUDIT PART 9: Payment & Cost Margin Audit (Steps 7 & 8)
@@ -333,8 +333,7 @@ export async function auditBOMAndProduction() {
   const pmt = await PaymentService.recordPayment({
     customerId: seed.retailerA.id,
     amount: 4000,
-    paymentDate: new Date(),
-    paymentMode: 'NEFT',
+    paymentMethod: PaymentMethod.BANK_TRANSFER,
     referenceNumber: 'NEFT-RETAIL-4000',
     invoiceId: invoiceA.id,
     userId: seed.admin.id,

@@ -40,7 +40,7 @@ export class OrderService {
 
     let subtotal = 0;
     let estimatedGst = 0;
-    const orderItemsData = [];
+    const orderItemsData: any[] = [];
 
     for (const item of params.items) {
       if (item.quantity <= 0) {
@@ -134,7 +134,7 @@ export class OrderService {
 
     let subtotal = 0;
     let estimatedGst = 0;
-    const newItemsData = [];
+    const newItemsData: any[] = [];
 
     for (const item of params.items) {
       if (item.quantity <= 0) {
