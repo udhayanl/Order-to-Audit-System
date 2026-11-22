@@ -53,7 +53,6 @@
     "@types/node": "^20.14.0",
     "@types/pdfkit": "^0.13.4",
     "@types/pg": "^8.11.6",
-    "embedded-postgres": "^18.7.0-beta.19",
     "prisma": "^5.17.0",
     "tsx": "^4.16.0",
     "typescript": "^5.4.5",

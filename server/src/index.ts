@@ -126,7 +126,7 @@ async function startServer() {
   try {
     // If not in test mode, ensure PostgreSQL is running
     if (process.env.NODE_ENV !== 'test') {
-      await ensurePostgresRunning(5432);
+      await ensurePostgresRunning();
     }
 
     app.listen(PORT, () => {
