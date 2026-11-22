@@ -48,6 +48,13 @@ export const errorHandler = (
       });
       return;
     }
+    if (err.code === 'P2003') {
+      res.status(409).json({
+        success: false,
+        message: 'Cannot perform operation: foreign key constraint failed. Related records depend on this entry.',
+      });
+      return;
+    }
     if (err.code === 'P2025') {
       res.status(404).json({
         success: false,
@@ -55,6 +62,22 @@ export const errorHandler = (
       });
       return;
     }
+  }
+
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    res.status(401).json({
+      success: false,
+      message: 'Authentication token is expired or invalid. Please log in again.',
+    });
+    return;
+  }
+
+  if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400) {
+    res.status(400).json({
+      success: false,
+      message: 'Malformed JSON payload in request body.',
+    });
+    return;
   }
 
   res.status(500).json({

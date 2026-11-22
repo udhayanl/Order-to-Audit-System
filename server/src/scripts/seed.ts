@@ -9,10 +9,33 @@ export async function seedDatabase(isReset = true) {
   if (isReset) {
     console.log('[Seed] Cleaning existing data...');
     // Delete in reverse dependency order
-    await prisma.auditLog.deleteMany();
+    await prisma.foodSafetyCompliance.deleteMany();
+    await prisma.inventoryAuditItem.deleteMany();
+    await prisma.auditFinding.deleteMany();
+    await prisma.auditSession.deleteMany();
+    await prisma.userActivityLog.deleteMany();
+    await prisma.bankReconciliation.deleteMany();
+    await prisma.bankStatementTransaction.deleteMany();
+    await prisma.bankStatement.deleteMany();
+    await prisma.journalEntryLine.deleteMany();
+    await prisma.journalEntry.deleteMany();
+    await prisma.chartOfAccount.deleteMany();
+    await prisma.financialAlert.deleteMany();
+    await prisma.accountingPeriod.deleteMany();
+    await prisma.expense.deleteMany();
+    await prisma.supplierPaymentAllocation.deleteMany();
+    await prisma.supplierPayment.deleteMany();
+    await prisma.financialAccountTransaction.deleteMany();
     await prisma.paymentAllocation.deleteMany();
     await prisma.payment.deleteMany();
+    await prisma.financialAccount.deleteMany();
+    await prisma.auditLog.deleteMany();
+    await prisma.creditNoteItem.deleteMany();
     await prisma.creditNote.deleteMany();
+    await prisma.salesReturnItem.deleteMany();
+    await prisma.salesReturn.deleteMany();
+    await prisma.stockAllocationItem.deleteMany();
+    await prisma.stockAllocation.deleteMany();
     await prisma.dispatchItem.deleteMany();
     await prisma.dispatch.deleteMany();
     await prisma.invoiceItem.deleteMany();
@@ -594,6 +617,312 @@ export async function seedDatabase(isReset = true) {
     },
   });
 
+  // 10. Phase 6 Financial Master Data
+  console.log('[Seed] Seeding Phase 6 Financial Accounts and Chart of Accounts...');
+  const cashAccount = await prisma.financialAccount.create({
+    data: {
+      accountName: 'Cash on Hand',
+      accountType: 'CASH',
+      openingBalance: new Prisma.Decimal(10000.0),
+      currentBalance: new Prisma.Decimal(10000.0),
+      currency: 'INR',
+    },
+  });
+
+  const bankAccount = await prisma.financialAccount.create({
+    data: {
+      accountName: 'State Bank of India - Current A/c',
+      accountType: 'CURRENT_ACCOUNT',
+      bankName: 'State Bank of India',
+      accountNumber: '40192837465',
+      ifscCode: 'SBIN0001234',
+      branchName: 'Thuvakudi, Tiruchirappalli',
+      openingBalance: new Prisma.Decimal(50000.0),
+      currentBalance: new Prisma.Decimal(50000.0),
+      currency: 'INR',
+    },
+  });
+
+  await prisma.accountingPeriod.create({
+    data: {
+      periodName: 'FY2026-27',
+      startDate: new Date('2026-04-01'),
+      endDate: new Date('2027-03-31'),
+      status: 'OPEN',
+    },
+  });
+
+  const coaData = [
+    { code: '1010', name: 'Cash on Hand', nature: 'ASSET' as any },
+    { code: '1020', name: 'Bank Account - SBI Current', nature: 'ASSET' as any },
+    { code: '1030', name: 'Accounts Receivable (Debtors)', nature: 'ASSET' as any },
+    { code: '1040', name: 'Raw Material Inventory', nature: 'ASSET' as any },
+    { code: '1050', name: 'Finished Goods Inventory', nature: 'ASSET' as any },
+    { code: '2010', name: 'Accounts Payable (Creditors)', nature: 'LIABILITY' as any },
+    { code: '2020', name: 'Output CGST Payable', nature: 'LIABILITY' as any },
+    { code: '2021', name: 'Output SGST Payable', nature: 'LIABILITY' as any },
+    { code: '2022', name: 'Output IGST Payable', nature: 'LIABILITY' as any },
+    { code: '2030', name: 'Input CGST Credit', nature: 'ASSET' as any },
+    { code: '2031', name: 'Input SGST Credit', nature: 'ASSET' as any },
+    { code: '2032', name: 'Input IGST Credit', nature: 'ASSET' as any },
+    { code: '3010', name: 'Owner Capital & Equity', nature: 'EQUITY' as any },
+    { code: '4010', name: 'Sales Revenue', nature: 'REVENUE' as any },
+    { code: '5010', name: 'Cost of Goods Sold (COGS)', nature: 'EXPENSE' as any },
+    { code: '5020', name: 'Electricity Expense', nature: 'EXPENSE' as any },
+    { code: '5030', name: 'Transportation & Freight', nature: 'EXPENSE' as any },
+    { code: '5040', name: 'Factory Maintenance & Repairs', nature: 'EXPENSE' as any },
+    { code: '5050', name: 'Wages & Factory Labour', nature: 'EXPENSE' as any },
+    { code: '5060', name: 'Packaging & Operating Supplies', nature: 'EXPENSE' as any },
+    { code: '5070', name: 'Administrative & Other Expenses', nature: 'EXPENSE' as any },
+  ];
+
+  for (const c of coaData) {
+    await prisma.chartOfAccount.create({
+      data: {
+        code: c.code,
+        name: c.name,
+        nature: c.nature,
+        currentDebit: new Prisma.Decimal(0.0),
+        currentCredit: new Prisma.Decimal(0.0),
+        currentBalance: new Prisma.Decimal(0.0),
+      },
+    });
+  }
+
+  // ================= SEED PHASE 7: AUDIT MANAGEMENT & COMPLIANCE =================
+  console.log('[Seed] Seeding Phase 7 Audit Sessions, Findings & FSSAI Compliance...');
+
+  // 1. Audit Sessions
+  const auditSession1 = await prisma.auditSession.create({
+    data: {
+      auditNumber: 'AUD-2026-0001',
+      title: 'Q3 Statutory Inventory & Production Execution Audit',
+      auditType: 'INVENTORY' as any,
+      status: 'COMPLETED' as any,
+      scheduledDate: new Date('2026-11-15T09:00:00Z'),
+      completedDate: new Date('2026-11-15T17:30:00Z'),
+      auditorId: auditor.id,
+      scope: 'Raw material godown, packaging storage, FIFO batch valuation, and batch yield tolerances',
+      summary: 'Comprehensive physical inventory count matched system stock ledger within 0.5% tolerance. General ledger and batch traceability confirmed intact.',
+      complianceScore: new Prisma.Decimal(96.50),
+    },
+  });
+
+  const auditSession2 = await prisma.auditSession.create({
+    data: {
+      auditNumber: 'AUD-2026-0002',
+      title: 'FSSAI Statutory Food Safety & Hygiene Surveillance',
+      auditType: 'FOOD_SAFETY' as any,
+      status: 'IN_PROGRESS' as any,
+      scheduledDate: new Date('2026-11-20T10:00:00Z'),
+      auditorId: auditor.id,
+      scope: 'Deep frying oil polar compounds, finished snack moisture %, allergen segregation, cleanroom pest control',
+      summary: 'Surveillance audit underway. Initial hygiene inspections completed successfully.',
+      complianceScore: new Prisma.Decimal(98.00),
+    },
+  });
+
+  // 2. Inventory Audit Items
+  await prisma.inventoryAuditItem.createMany({
+    data: [
+      {
+        auditSessionId: auditSession1.id,
+        itemType: 'RAW_MATERIAL',
+        itemId: flourRM.id,
+        itemName: flourRM.name,
+        itemCode: flourRM.code,
+        systemStock: new Prisma.Decimal(100.0),
+        physicalStock: new Prisma.Decimal(100.0),
+        varianceQuantity: new Prisma.Decimal(0.0),
+        unitCost: new Prisma.Decimal(42.0),
+        varianceValue: new Prisma.Decimal(0.0),
+        status: 'MATCHED',
+      },
+      {
+        auditSessionId: auditSession1.id,
+        itemType: 'RAW_MATERIAL',
+        itemId: oilRM.id,
+        itemName: oilRM.name,
+        itemCode: oilRM.code,
+        systemStock: new Prisma.Decimal(50.0),
+        physicalStock: new Prisma.Decimal(49.8),
+        varianceQuantity: new Prisma.Decimal(-0.2),
+        unitCost: new Prisma.Decimal(135.0),
+        varianceValue: new Prisma.Decimal(-27.0),
+        discrepancyReason: 'Minor evaporation and dispensing residue in pipeline',
+        status: 'DISCREPANCY_FLAGGED',
+      },
+      {
+        auditSessionId: auditSession1.id,
+        itemType: 'PACKAGING',
+        itemId: pouchPkg.id,
+        itemName: pouchPkg.name,
+        itemCode: pouchPkg.code,
+        systemStock: new Prisma.Decimal(500.0),
+        physicalStock: new Prisma.Decimal(500.0),
+        varianceQuantity: new Prisma.Decimal(0.0),
+        unitCost: new Prisma.Decimal(2.5),
+        varianceValue: new Prisma.Decimal(0.0),
+        status: 'MATCHED',
+      },
+      {
+        auditSessionId: auditSession1.id,
+        itemType: 'FINISHED_GOODS',
+        itemId: murukkuProduct.id,
+        itemName: murukkuProduct.name,
+        itemCode: murukkuProduct.sku,
+        systemStock: new Prisma.Decimal(50.0),
+        physicalStock: new Prisma.Decimal(50.0),
+        varianceQuantity: new Prisma.Decimal(0.0),
+        unitCost: new Prisma.Decimal(30.0),
+        varianceValue: new Prisma.Decimal(0.0),
+        status: 'MATCHED',
+      },
+    ],
+  });
+
+  // 3. Audit Findings (CAPA)
+  await prisma.auditFinding.createMany({
+    data: [
+      {
+        auditSessionId: auditSession1.id,
+        findingNumber: 'FND-2026-0001',
+        title: 'Cooking Oil dispensing residue discrepancy',
+        category: 'INVENTORY' as any,
+        severity: 'MINOR' as any,
+        status: 'RESOLVED' as any,
+        description: 'Physical oil stock showed 0.2 kg variance compared to system stock ledger due to pipeline hold-up.',
+        correctiveAction: 'Calibrated digital weight scale on frying transfer pump and documented daily tank dipping protocol.',
+        assignedToId: supervisor.id,
+        targetDate: new Date('2026-11-22T00:00:00Z'),
+        resolvedDate: new Date('2026-11-18T00:00:00Z'),
+        resolutionNotes: 'Tank dipping protocol established. Verified variance reduced to negligible 0.02 kg.',
+      },
+      {
+        auditSessionId: auditSession2.id,
+        findingNumber: 'FND-2026-0002',
+        title: 'Daily Oil Total Polar Compounds (TPM) approaching 20% mark',
+        category: 'QUALITY' as any,
+        severity: 'MAJOR' as any,
+        status: 'IN_PROGRESS' as any,
+        description: 'Batch 3 frying oil measured 19.5% TPM. FSSAI statutory threshold ceiling is 25%.',
+        correctiveAction: 'Schedule complete oil changeover after 4 more hours of operation and record oil discard log.',
+        assignedToId: supervisor.id,
+        targetDate: new Date('2026-11-25T00:00:00Z'),
+      },
+      {
+        auditSessionId: auditSession2.id,
+        findingNumber: 'FND-2026-0003',
+        title: 'Quarterly Pest Control Certificate renewal due',
+        category: 'REGULATORY' as any,
+        severity: 'MINOR' as any,
+        status: 'OPEN' as any,
+        description: 'Pest management contractor service agreement expires in 12 days. Traps inspected and compliant.',
+        correctiveAction: 'Admin to initiate service contract renewal with approved pest control vendor.',
+        assignedToId: admin.id,
+        targetDate: new Date('2026-11-30T00:00:00Z'),
+      },
+    ],
+  });
+
+  // 4. Food Safety Checks (FSSAI)
+  await prisma.foodSafetyCompliance.createMany({
+    data: [
+      {
+        checkNumber: 'FSSAI-2026-0001',
+        checkDate: new Date('2026-11-15T08:30:00Z'),
+        category: 'OIL_POLAR_COMPOUNDS' as any,
+        standardRequired: 'Total Polar Compounds (TPM) <= 25.0% as per FSSAI Section 16 Regulation',
+        actualObserved: '18.2% TPM measured using Testo 270 electronic oil tester',
+        isCompliant: true,
+        inspectorId: auditor.id,
+        remarks: 'Oil quality fresh and safe for high-temperature batch frying.',
+      },
+      {
+        checkNumber: 'FSSAI-2026-0002',
+        checkDate: new Date('2026-11-15T11:00:00Z'),
+        category: 'TEMPERATURE' as any,
+        standardRequired: 'Frying kettle temperature maintained between 175°C - 185°C',
+        actualObserved: 'Digital probe registered 180.5°C steady thermal profile',
+        isCompliant: true,
+        inspectorId: auditor.id,
+        remarks: 'Uniform heat distribution; optimal for crispiness.',
+      },
+      {
+        checkNumber: 'FSSAI-2026-0003',
+        checkDate: new Date('2026-11-16T09:00:00Z'),
+        category: 'HYGIENE' as any,
+        standardRequired: 'Personnel protective gear (hairnets, aprons, nitrile gloves) & zero jewelry',
+        actualObserved: '100% staff compliance verified at production entry airlock',
+        isCompliant: true,
+        inspectorId: auditor.id,
+        remarks: 'Cleanroom sanitization protocols followed strictly.',
+      },
+      {
+        checkNumber: 'FSSAI-2026-0004',
+        checkDate: new Date('2026-11-17T14:00:00Z'),
+        category: 'PEST_CONTROL' as any,
+        standardRequired: 'Ultrasonic rodent repellents active and fly insectocutors operational',
+        actualObserved: 'All 6 UV insect traps active; zero rodent/insect breach recorded',
+        isCompliant: true,
+        inspectorId: auditor.id,
+        remarks: 'Perimeter bait stations inspected and documented.',
+      },
+      {
+        checkNumber: 'FSSAI-2026-0005',
+        checkDate: new Date('2026-11-18T16:00:00Z'),
+        category: 'EXPIRY_VERIFICATION' as any,
+        standardRequired: 'All finished snack pouches printed with batch number, mfg date & 90-day expiry',
+        actualObserved: 'Inkjet batch coder verified legible on 100% inspected samples',
+        isCompliant: true,
+        inspectorId: auditor.id,
+        remarks: 'FSSAI License #12423011000456 verified on printed film.',
+      },
+    ],
+  });
+
+  // 5. User Activity Logs
+  await prisma.userActivityLog.createMany({
+    data: [
+      {
+        userId: admin.id,
+        action: 'LOGIN',
+        entityType: 'AUTH',
+        entityId: admin.id,
+        description: 'Administrator logged into system from factory office IP',
+        ipAddress: '192.168.1.10',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+      {
+        userId: auditor.id,
+        action: 'AUDIT_INSPECTION',
+        entityType: 'AUDIT_SESSION',
+        entityId: auditSession1.id,
+        description: 'Statutory physical inventory verification completed for Q3',
+        ipAddress: '192.168.1.25',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
+      {
+        userId: supervisor.id,
+        action: 'PRODUCTION_POST',
+        entityType: 'PRODUCTION_RUN',
+        entityId: 'BATCH-2026-0001',
+        description: 'Supervised production run of 188 Murukku 200g packets',
+        ipAddress: '192.168.1.15',
+        userAgent: 'Mozilla/5.0 (Linux; Android 13)',
+      },
+      {
+        userId: salesmanA.id,
+        action: 'ORDER_CREATE',
+        entityType: 'SALES_ORDER',
+        entityId: 'ORD-2026-0001',
+        description: 'Sales order captured for Retailer A (100 pkts Murukku)',
+        ipAddress: '10.0.0.45',
+        userAgent: 'Mozilla/5.0 (Mobile; Android 14)',
+      },
+    ],
+  });
+
   console.log('[Seed] Database successfully seeded with benchmark master data and opening balances.');
   return {
     admin,
@@ -616,6 +945,8 @@ export async function seedDatabase(isReset = true) {
     murukkuProduct,
     bom,
     murukkuBOM: bom,
+    cashAccount,
+    bankAccount,
   };
 }
 

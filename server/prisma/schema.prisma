@@ -23,15 +23,25 @@ enum CustomerType {
 enum OrderStatus {
   DRAFT
   SUBMITTED
+  PENDING_APPROVAL
   APPROVED
   REJECTED
-  INVOICED
+  PARTIALLY_ALLOCATED
+  ALLOCATED
+  PARTIALLY_DISPATCHED
   DISPATCHED
+  COMPLETED
+  CANCELLED
+  INVOICED
 }
 
 enum InvoiceStatus {
+  DRAFT
   POSTED
+  PARTIALLY_PAID
+  PAID
   CANCELLED
+  CREDIT_NOTE_ISSUED
 }
 
 enum StockMovementType {
@@ -80,6 +90,80 @@ enum PaymentMethod {
   BANK_TRANSFER
   UPI
   CHEQUE
+  NEFT
+  RTGS
+  IMPS
+  OTHER
+}
+
+enum PaymentStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+  REVERSED
+}
+
+enum AccountType {
+  CASH
+  CURRENT_ACCOUNT
+  SAVINGS_ACCOUNT
+  OTHER
+}
+
+enum AccountTxDirection {
+  IN
+  OUT
+}
+
+enum AccountTxType {
+  RECEIPT
+  PAYMENT
+  EXPENSE
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum ExpenseCategory {
+  ELECTRICITY
+  WATER
+  RENT
+  TRANSPORTATION
+  FUEL
+  LABOUR
+  PACKAGING
+  MAINTENANCE
+  REPAIRS
+  MACHINERY
+  OFFICE_SUPPLIES
+  INTERNET_PHONE
+  ADMINISTRATIVE
+  MARKETING
+  OTHER
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  POSTED
+  CANCELLED
+}
+
+enum AccountNature {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum ReconciliationStatus {
+  UNRECONCILED
+  MATCHED
+  AUTO_MATCHED
+  MANUALLY_MATCHED
+  DISCREPANCY
 }
 
 model User {
@@ -112,7 +196,24 @@ model User {
   supervisedProductionOrders ProductionOrder[] @relation("SupervisedProductionOrders")
   materialIssues   MaterialIssue[]   @relation("UserMaterialIssues")
   inspectedQuality QualityInspection[] @relation("UserQualityInspections")
+  allocatedOrders  SalesOrder[]      @relation("AllocatedOrders")
+  createdStockAllocations StockAllocation[] @relation("UserStockAllocations")
+  createdSalesReturns SalesReturn[]    @relation("UserSalesReturns")
+  approvedSalesReturns SalesReturn[]   @relation("ApprovedSalesReturns")
+  reversedPayments Payment[] @relation("ReversedPayments")
+  supplierPayments SupplierPayment[] @relation("UserSupplierPayments")
+  reversedSupplierPayments SupplierPayment[] @relation("ReversedSupplierPayments")
+  recordedExpenses Expense[] @relation("RecordedExpenses")
+  approvedExpenses Expense[] @relation("ApprovedExpenses")
+  financialAccountTransactions FinancialAccountTransaction[] @relation("UserFinancialAccountTransactions")
+  journalEntries JournalEntry[] @relation("UserJournalEntries")
+  bankStatements BankStatement[] @relation("UserBankStatements")
+  reconciliations BankReconciliation[] @relation("UserReconciliations")
   auditLogs    AuditLog[]
+  userActivityLogs UserActivityLog[]
+  auditorSessions AuditSession[] @relation("AuditorSessions")
+  assignedFindings AuditFinding[] @relation("AssignedFindings")
+  inspectedFoodSafety FoodSafetyCompliance[] @relation("InspectorFoodSafety")
 }
 
 model Customer {
@@ -142,6 +243,7 @@ model Customer {
   invoices        Invoice[]
   payments        Payment[]
   creditNotes     CreditNote[]
+  salesReturns    SalesReturn[]
 
   @@index([salesmanId])
 }
@@ -163,7 +265,8 @@ model Supplier {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  purchases     Purchase[]
+  purchases        Purchase[]
+  supplierPayments SupplierPayment[]
 }
 
 model ProductCategory {
@@ -198,6 +301,9 @@ model Product {
   productionOrders ProductionOrder[]
   productionOutputs ProductionOutput[]
   qualityInspections QualityInspection[]
+  stockAllocationItems StockAllocationItem[]
+  salesReturnItems SalesReturnItem[]
+  creditNoteItems CreditNoteItem[]
 
   @@index([sku])
 }
@@ -320,6 +426,9 @@ model Purchase {
   totalGst              Decimal        @db.Decimal(12, 2)
   grandTotal            Decimal        @db.Decimal(12, 2)
   status                String         @default("RECEIVED") // DRAFT, CONFIRMED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  paidAmount            Decimal        @default(0.0) @db.Decimal(12, 2)
+  outstandingAmount     Decimal?       @db.Decimal(12, 2)
+  paymentStatus         String         @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID
   receivedDate          DateTime?
   notes                 String?
   createdById           String
@@ -329,6 +438,7 @@ model Purchase {
 
   items                 PurchaseItem[]
   goodsReceipts         GoodsReceipt[]
+  supplierAllocations   SupplierPaymentAllocation[]
 
   @@index([purchaseNumber])
   @@index([supplierId])
@@ -679,6 +789,8 @@ model SalesOrder {
   salesmanId      String
   salesman        User             @relation("SalesmanOrders", fields: [salesmanId], references: [id])
   orderDate       DateTime         @default(now())
+  deliveryDate    DateTime?
+  paymentTerms    String?          @default("30 Days Net")
   status          OrderStatus      @default(SUBMITTED)
   subtotal        Decimal          @db.Decimal(12, 2)
   estimatedGst    Decimal          @db.Decimal(12, 2)
@@ -688,32 +800,90 @@ model SalesOrder {
   approvedById    String?
   approvedBy      User?            @relation("ApprovedOrders", fields: [approvedById], references: [id])
   approvedAt      DateTime?
+  allocatedById   String?
+  allocatedBy     User?            @relation("AllocatedOrders", fields: [allocatedById], references: [id])
+  allocatedAt     DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   items           SalesOrderItem[]
   invoice         Invoice?
   dispatch        Dispatch?
+  allocations     StockAllocation[]
+  returns         SalesReturn[]
 
   @@index([orderNumber])
   @@index([customerId])
   @@index([salesmanId])
+  @@index([status])
 }
 
 model SalesOrderItem {
-  id            String     @id @default(uuid())
-  salesOrderId  String
-  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  productId     String
-  product       Product    @relation(fields: [productId], references: [id])
-  quantity      Decimal    @db.Decimal(12, 2)
-  unitPrice     Decimal    @db.Decimal(12, 2)
-  gstRate       Decimal    @default(5.0) @db.Decimal(5, 2)
-  taxableAmount Decimal    @db.Decimal(12, 2)
-  gstAmount     Decimal    @db.Decimal(12, 2)
-  totalAmount   Decimal    @db.Decimal(12, 2)
+  id                String      @id @default(uuid())
+  salesOrderId      String
+  salesOrder        SalesOrder  @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product     @relation(fields: [productId], references: [id])
+  quantity          Decimal     @db.Decimal(12, 2)
+  allocatedQuantity Decimal     @default(0.0) @db.Decimal(12, 2)
+  dispatchedQuantity Decimal    @default(0.0) @db.Decimal(12, 2)
+  unitPrice         Decimal     @db.Decimal(12, 2)
+  discount          Decimal     @default(0.0) @db.Decimal(12, 2)
+  discountPercent   Decimal     @default(0.0) @db.Decimal(5, 2)
+  gstRate           Decimal     @default(5.0) @db.Decimal(5, 2)
+  taxableAmount     Decimal     @db.Decimal(12, 2)
+  gstAmount         Decimal     @db.Decimal(12, 2)
+  totalAmount       Decimal     @db.Decimal(12, 2)
 
   @@index([salesOrderId])
+}
+
+model StockAllocation {
+  id                String               @id @default(uuid())
+  allocationNumber  String               @unique
+  salesOrderId      String
+  salesOrder        SalesOrder           @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  allocationDate    DateTime             @default(now())
+  status            String               @default("ACTIVE") // ACTIVE, RELEASED, CONSUMED, CANCELLED
+  allocatedById     String
+  allocatedBy       User                 @relation("UserStockAllocations", fields: [allocatedById], references: [id])
+  notes             String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  items             StockAllocationItem[]
+
+  @@index([allocationNumber])
+  @@index([salesOrderId])
+}
+
+model StockAllocationItem {
+  id                String               @id @default(uuid())
+  allocationId      String
+  allocation        StockAllocation      @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product              @relation(fields: [productId], references: [id])
+  batchNumber       String?
+  requestedQuantity Decimal              @db.Decimal(12, 2)
+  allocatedQuantity Decimal              @db.Decimal(12, 2)
+  status            String               @default("ALLOCATED") // ALLOCATED, DISPATCHED, RELEASED
+
+  @@index([allocationId])
+  @@index([productId])
+}
+
+model TaxConfiguration {
+  id                String               @id @default(uuid())
+  businessName      String               @default("FactoryFlow Packaged Foods Pvt Ltd")
+  gstin             String               @default("33AAACF1234M1Z5")
+  state             String               @default("Tamil Nadu")
+  stateCode         String               @default("33")
+  address           String               @default("SF 24/2, Trichy-Thanjavur Highway, Thuvakudi, Tiruchirappalli, Tamil Nadu 620015")
+  phone             String               @default("+91 94431 12345")
+  email             String               @default("billing@factoryflow.in")
+  defaultGstRate    Decimal              @default(5.0) @db.Decimal(5, 2)
+  isComposition     Boolean              @default(false)
+  updatedAt         DateTime             @updatedAt
 }
 
 model Invoice {
@@ -733,9 +903,11 @@ model Invoice {
   cgstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
   sgstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
   igstAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
+  roundOffAmount    Decimal        @default(0.0) @db.Decimal(8, 2)
   grandTotal        Decimal        @db.Decimal(12, 2)
   paidAmount        Decimal        @default(0.0) @db.Decimal(12, 2)
   outstandingAmount Decimal        @db.Decimal(12, 2)
+  amountInWords     String?
   status            InvoiceStatus  @default(POSTED)
   notes             String?
   createdById       String
@@ -747,6 +919,7 @@ model Invoice {
   creditNotes       CreditNote[]
   allocations       PaymentAllocation[]
   dispatches        Dispatch[]
+  salesReturns      SalesReturn[]
 
   @@index([invoiceNumber])
   @@index([customerId])
@@ -763,31 +936,112 @@ model InvoiceItem {
   quantity      Decimal  @db.Decimal(12, 2)
   unit          String   @default("packets")
   unitPrice     Decimal  @db.Decimal(12, 2)
+  discount      Decimal  @default(0.0) @db.Decimal(12, 2)
   taxableAmount Decimal  @db.Decimal(12, 2)
   gstRate       Decimal  @default(5.0) @db.Decimal(5, 2)
   cgstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
   sgstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
   igstAmount    Decimal  @default(0.0) @db.Decimal(12, 2)
   totalAmount   Decimal  @db.Decimal(12, 2)
+  batchNumber   String?
 
   @@index([invoiceId])
 }
 
 model CreditNote {
-  id               String   @id @default(uuid())
-  creditNoteNumber String   @unique
+  id               String            @id @default(uuid())
+  creditNoteNumber String            @unique
   invoiceId        String
-  invoice          Invoice  @relation(fields: [invoiceId], references: [id])
+  invoice          Invoice           @relation(fields: [invoiceId], references: [id])
   customerId       String
-  customer         Customer @relation(fields: [customerId], references: [id])
-  issueDate        DateTime @default(now())
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  salesReturnId    String?
+  salesReturn      SalesReturn?      @relation(fields: [salesReturnId], references: [id])
+  issueDate        DateTime          @default(now())
   reason           String
-  totalAmount      Decimal  @db.Decimal(12, 2)
+  totalTaxable     Decimal           @default(0.0) @db.Decimal(12, 2)
+  cgstAmount       Decimal           @default(0.0) @db.Decimal(12, 2)
+  sgstAmount       Decimal           @default(0.0) @db.Decimal(12, 2)
+  igstAmount       Decimal           @default(0.0) @db.Decimal(12, 2)
+  totalAmount      Decimal           @db.Decimal(12, 2)
+  status           String            @default("POSTED") // DRAFT, POSTED, CANCELLED
   createdById      String
-  createdBy        User     @relation("UserCreditNotes", fields: [createdById], references: [id])
-  createdAt        DateTime @default(now())
+  createdBy        User              @relation("UserCreditNotes", fields: [createdById], references: [id])
+  createdAt        DateTime          @default(now())
+
+  items            CreditNoteItem[]
 
   @@index([creditNoteNumber])
+  @@index([invoiceId])
+  @@index([customerId])
+}
+
+model CreditNoteItem {
+  id            String     @id @default(uuid())
+  creditNoteId  String
+  creditNote    CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product    @relation(fields: [productId], references: [id])
+  quantity      Decimal    @db.Decimal(12, 2)
+  unitPrice     Decimal    @db.Decimal(12, 2)
+  taxableAmount Decimal    @db.Decimal(12, 2)
+  gstRate       Decimal    @default(5.0) @db.Decimal(5, 2)
+  cgstAmount    Decimal    @default(0.0) @db.Decimal(12, 2)
+  sgstAmount    Decimal    @default(0.0) @db.Decimal(12, 2)
+  igstAmount    Decimal    @default(0.0) @db.Decimal(12, 2)
+  totalAmount   Decimal    @db.Decimal(12, 2)
+
+  @@index([creditNoteId])
+  @@index([productId])
+}
+
+model SalesReturn {
+  id             String            @id @default(uuid())
+  returnNumber   String            @unique
+  salesOrderId   String?
+  salesOrder     SalesOrder?       @relation(fields: [salesOrderId], references: [id])
+  invoiceId      String?
+  invoice        Invoice?          @relation(fields: [invoiceId], references: [id])
+  dispatchId     String?
+  dispatch       Dispatch?         @relation(fields: [dispatchId], references: [id])
+  customerId     String
+  customer       Customer          @relation(fields: [customerId], references: [id])
+  returnDate     DateTime          @default(now())
+  returnReason   String            // DAMAGED_GOODS, EXPIRED_GOODS, INCORRECT_PRODUCT, INCORRECT_QUANTITY, QUALITY_COMPLAINT, OTHER
+  status         String            @default("APPROVED") // PENDING, APPROVED, REJECTED, POSTED
+  notes          String?
+  createdById    String
+  createdBy      User              @relation("UserSalesReturns", fields: [createdById], references: [id])
+  approvedById   String?
+  approvedBy     User?             @relation("ApprovedSalesReturns", fields: [approvedById], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  items          SalesReturnItem[]
+  creditNotes    CreditNote[]
+
+  @@index([returnNumber])
+  @@index([customerId])
+}
+
+model SalesReturnItem {
+  id               String        @id @default(uuid())
+  salesReturnId    String
+  salesReturn      SalesReturn   @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product       @relation(fields: [productId], references: [id])
+  batchNumber      String?
+  returnedQuantity Decimal       @db.Decimal(12, 2)
+  condition        String        @default("GOOD") // GOOD, DAMAGED, EXPIRED, QUARANTINED
+  unitPrice        Decimal       @db.Decimal(12, 2)
+  taxableAmount    Decimal       @db.Decimal(12, 2)
+  gstRate          Decimal       @default(5.0) @db.Decimal(5, 2)
+  totalAmount      Decimal       @db.Decimal(12, 2)
+  stockRestocked   Boolean       @default(false)
+  stockLedgerId    String?
+
+  @@index([salesReturnId])
+  @@index([productId])
 }
 
 model Dispatch {
@@ -800,23 +1054,30 @@ model Dispatch {
   dispatchDate   DateTime       @default(now())
   vehicleNumber  String?
   driverName     String?
+  transporter    String?
   remarks        String?
+  deliveryStatus String         @default("DISPATCHED") // READY_FOR_DISPATCH, DISPATCHED, IN_TRANSIT, DELIVERED, RETURNED
+  deliveryDate   DateTime?
   createdById    String
   createdBy      User           @relation("UserDispatches", fields: [createdById], references: [id])
   createdAt      DateTime       @default(now())
 
   items          DispatchItem[]
+  salesReturns   SalesReturn[]
 
   @@index([dispatchNumber])
 }
 
 model DispatchItem {
-  id         String   @id @default(uuid())
-  dispatchId String
-  dispatch   Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Decimal  @db.Decimal(12, 2)
+  id                String    @id @default(uuid())
+  dispatchId        String
+  dispatch          Dispatch  @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product   @relation(fields: [productId], references: [id])
+  quantity          Decimal   @db.Decimal(12, 2)
+  batchNumber       String?
+  manufacturingDate DateTime?
+  expiryDate        DateTime?
 
   @@index([dispatchId])
 }
@@ -914,23 +1175,35 @@ model InventoryValuationLayer {
 }
 
 model Payment {
-  id              String              @id @default(uuid())
-  paymentNumber   String              @unique
-  customerId      String
-  customer        Customer            @relation(fields: [customerId], references: [id])
-  paymentDate     DateTime            @default(now())
-  amount          Decimal             @db.Decimal(12, 2)
-  paymentMethod   PaymentMethod       @default(BANK_TRANSFER)
-  referenceNumber String?
-  notes           String?
-  createdById     String
-  createdBy       User                @relation("UserPayments", fields: [createdById], references: [id])
-  createdAt       DateTime            @default(now())
+  id                 String              @id @default(uuid())
+  paymentNumber      String              @unique
+  receiptNumber      String?             @unique
+  customerId         String
+  customer           Customer            @relation(fields: [customerId], references: [id])
+  paymentDate        DateTime            @default(now())
+  amount             Decimal             @db.Decimal(12, 2)
+  paymentMethod      PaymentMethod       @default(BANK_TRANSFER)
+  financialAccountId String?
+  financialAccount   FinancialAccount?   @relation(fields: [financialAccountId], references: [id])
+  referenceNumber    String?
+  notes              String?
+  status             PaymentStatus       @default(POSTED)
+  advanceAmount      Decimal             @default(0.0) @db.Decimal(12, 2)
+  unallocatedAmount  Decimal             @default(0.0) @db.Decimal(12, 2)
+  createdById        String
+  createdBy          User                @relation("UserPayments", fields: [createdById], references: [id])
+  reversedAt         DateTime?
+  reversedById       String?
+  reversedBy         User?               @relation("ReversedPayments", fields: [reversedById], references: [id])
+  reversalReason     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
 
-  allocations     PaymentAllocation[]
+  allocations        PaymentAllocation[]
 
   @@index([paymentNumber])
   @@index([customerId])
+  @@index([financialAccountId])
 }
 
 model PaymentAllocation {
@@ -944,6 +1217,276 @@ model PaymentAllocation {
 
   @@index([paymentId])
   @@index([invoiceId])
+}
+
+model SupplierPayment {
+  id                 String                      @id @default(uuid())
+  paymentNumber      String                      @unique
+  voucherNumber      String?                     @unique
+  supplierId         String
+  supplier           Supplier                    @relation(fields: [supplierId], references: [id])
+  paymentDate        DateTime                    @default(now())
+  amount             Decimal                     @db.Decimal(12, 2)
+  paymentMethod      PaymentMethod               @default(BANK_TRANSFER)
+  financialAccountId String?
+  financialAccount   FinancialAccount?           @relation(fields: [financialAccountId], references: [id])
+  referenceNumber    String?
+  notes              String?
+  status             PaymentStatus               @default(POSTED)
+  advanceAmount      Decimal                     @default(0.0) @db.Decimal(12, 2)
+  unallocatedAmount  Decimal                     @default(0.0) @db.Decimal(12, 2)
+  createdById        String
+  createdBy          User                        @relation("UserSupplierPayments", fields: [createdById], references: [id])
+  reversedAt         DateTime?
+  reversedById       String?
+  reversedBy         User?                       @relation("ReversedSupplierPayments", fields: [reversedById], references: [id])
+  reversalReason     String?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @default(now()) @updatedAt
+
+  allocations        SupplierPaymentAllocation[]
+
+  @@index([paymentNumber])
+  @@index([supplierId])
+  @@index([financialAccountId])
+}
+
+model SupplierPaymentAllocation {
+  id                String          @id @default(uuid())
+  supplierPaymentId String
+  supplierPayment   SupplierPayment @relation(fields: [supplierPaymentId], references: [id], onDelete: Cascade)
+  purchaseId        String
+  purchase          Purchase        @relation(fields: [purchaseId], references: [id])
+  amount            Decimal         @db.Decimal(12, 2)
+  createdAt         DateTime        @default(now())
+
+  @@index([supplierPaymentId])
+  @@index([purchaseId])
+}
+
+model FinancialAccount {
+  id             String                        @id @default(uuid())
+  accountName    String                        @unique
+  accountType    AccountType                   @default(CURRENT_ACCOUNT)
+  bankName       String?
+  accountNumber  String?
+  ifscCode       String?
+  branchName     String?
+  openingBalance Decimal                       @default(0.0) @db.Decimal(12, 2)
+  currentBalance Decimal                       @default(0.0) @db.Decimal(12, 2)
+  currency       String                        @default("INR")
+  active         Boolean                       @default(true)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @default(now()) @updatedAt
+
+  customerPayments Payment[]
+  supplierPayments SupplierPayment[]
+  expenses         Expense[]
+  transactions     FinancialAccountTransaction[]
+  bankStatements   BankStatement[]
+
+  @@index([accountType])
+}
+
+model FinancialAccountTransaction {
+  id                 String                      @id @default(uuid())
+  financialAccountId String
+  financialAccount   FinancialAccount            @relation(fields: [financialAccountId], references: [id], onDelete: Cascade)
+  transactionDate    DateTime                    @default(now())
+  transactionType    AccountTxType
+  direction          AccountTxDirection
+  amount             Decimal                     @db.Decimal(12, 2)
+  balanceAfter       Decimal                     @db.Decimal(12, 2)
+  referenceType      String                      // "CUSTOMER_PAYMENT", "SUPPLIER_PAYMENT", "EXPENSE", "CONTRA_TRANSFER", "ADJUSTMENT"
+  referenceId        String?
+  referenceNumber    String?
+  description        String?
+  userId             String?
+  user               User?                       @relation("UserFinancialAccountTransactions", fields: [userId], references: [id])
+  createdAt          DateTime                    @default(now())
+
+  statementMatches   BankStatementTransaction[]
+
+  @@index([financialAccountId, transactionDate])
+  @@index([referenceType, referenceId])
+}
+
+model Expense {
+  id                 String            @id @default(uuid())
+  expenseNumber      String            @unique
+  expenseDate        DateTime          @default(now())
+  category           ExpenseCategory   @default(OTHER)
+  description        String
+  amount             Decimal           @db.Decimal(12, 2)
+  taxAmount          Decimal           @default(0.0) @db.Decimal(12, 2)
+  totalAmount        Decimal           @db.Decimal(12, 2)
+  vendor             String?
+  paymentMethod      PaymentMethod     @default(CASH)
+  financialAccountId String?
+  financialAccount   FinancialAccount? @relation(fields: [financialAccountId], references: [id])
+  referenceNumber    String?
+  receiptUrl         String?
+  status             ExpenseStatus     @default(POSTED)
+  rejectionReason    String?
+  recordedById       String
+  recordedBy         User              @relation("RecordedExpenses", fields: [recordedById], references: [id])
+  approvedById       String?
+  approvedBy         User?             @relation("ApprovedExpenses", fields: [approvedById], references: [id])
+  approvedAt         DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @default(now()) @updatedAt
+
+  @@index([expenseNumber])
+  @@index([category])
+  @@index([status])
+  @@index([financialAccountId])
+}
+
+model ChartOfAccount {
+  id             String             @id @default(uuid())
+  code           String             @unique // "1010", "1020", "2010", etc.
+  name           String
+  nature         AccountNature
+  parentCode     String?
+  description    String?
+  currentDebit   Decimal            @default(0.0) @db.Decimal(14, 2)
+  currentCredit  Decimal            @default(0.0) @db.Decimal(14, 2)
+  currentBalance Decimal            @default(0.0) @db.Decimal(14, 2)
+  active         Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+
+  journalLines   JournalEntryLine[]
+
+  @@index([code])
+  @@index([nature])
+}
+
+model JournalEntry {
+  id          String             @id @default(uuid())
+  entryNumber String             @unique
+  entryDate   DateTime           @default(now())
+  entryType   String             @default("GENERAL") // "SALES", "PURCHASE", "RECEIPT", "PAYMENT", "EXPENSE", "CONTRA", "GENERAL"
+  narration   String
+  referenceType String?
+  referenceId   String?
+  totalDebit  Decimal            @db.Decimal(14, 2)
+  totalCredit Decimal            @db.Decimal(14, 2)
+  isBalanced  Boolean            @default(true)
+  status      String             @default("POSTED") // "POSTED", "REVERSED", "DRAFT"
+  createdById String
+  createdBy   User               @relation("UserJournalEntries", fields: [createdById], references: [id])
+  createdAt   DateTime           @default(now())
+
+  lines       JournalEntryLine[]
+
+  @@index([entryNumber])
+  @@index([entryDate])
+  @@index([referenceType, referenceId])
+}
+
+model JournalEntryLine {
+  id             String         @id @default(uuid())
+  journalEntryId String
+  journalEntry   JournalEntry   @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountCode    String
+  account        ChartOfAccount @relation(fields: [accountCode], references: [code])
+  debit          Decimal        @default(0.0) @db.Decimal(14, 2)
+  credit         Decimal        @default(0.0) @db.Decimal(14, 2)
+  description    String?
+  createdAt      DateTime       @default(now())
+
+  @@index([journalEntryId])
+  @@index([accountCode])
+}
+
+model BankStatement {
+  id                 String                     @id @default(uuid())
+  statementNumber    String                     @unique
+  financialAccountId String
+  financialAccount   FinancialAccount           @relation(fields: [financialAccountId], references: [id])
+  startDate          DateTime
+  endDate            DateTime
+  openingBalance     Decimal                    @db.Decimal(12, 2)
+  closingBalance     Decimal                    @db.Decimal(12, 2)
+  status             String                     @default("IMPORTED") // IMPORTED, IN_PROGRESS, RECONCILED
+  importedById       String
+  importedBy         User                       @relation("UserBankStatements", fields: [importedById], references: [id])
+  createdAt          DateTime                   @default(now())
+
+  lines              BankStatementTransaction[]
+  reconciliations    BankReconciliation[]
+
+  @@index([statementNumber])
+  @@index([financialAccountId])
+}
+
+model BankStatementTransaction {
+  id                 String                       @id @default(uuid())
+  bankStatementId    String
+  bankStatement      BankStatement                @relation(fields: [bankStatementId], references: [id], onDelete: Cascade)
+  transactionDate    DateTime
+  valueDate          DateTime?
+  description        String
+  referenceNumber    String?
+  withdrawal         Decimal                      @default(0.0) @db.Decimal(12, 2)
+  deposit            Decimal                      @default(0.0) @db.Decimal(12, 2)
+  balanceAfter       Decimal?                     @db.Decimal(12, 2)
+  status             ReconciliationStatus         @default(UNRECONCILED)
+  matchedTxId        String?
+  matchedTx          FinancialAccountTransaction? @relation(fields: [matchedTxId], references: [id])
+  createdAt          DateTime                     @default(now())
+
+  @@index([bankStatementId])
+  @@index([matchedTxId])
+}
+
+model BankReconciliation {
+  id                     String        @id @default(uuid())
+  reconciliationNumber   String        @unique
+  bankStatementId        String
+  bankStatement          BankStatement @relation(fields: [bankStatementId], references: [id])
+  financialAccountId     String
+  reconciliationDate     DateTime      @default(now())
+  statementBalance       Decimal       @db.Decimal(12, 2)
+  bookBalance            Decimal       @db.Decimal(12, 2)
+  unreconciledDifference Decimal       @db.Decimal(12, 2)
+  status                 String        @default("COMPLETED")
+  notes                  String?
+  reconciledById         String
+  reconciledBy           User          @relation("UserReconciliations", fields: [reconciledById], references: [id])
+  createdAt              DateTime      @default(now())
+
+  @@index([reconciliationNumber])
+  @@index([financialAccountId])
+}
+
+model AccountingPeriod {
+  id         String    @id @default(uuid())
+  periodName String    @unique // e.g. "FY2026-27"
+  startDate  DateTime
+  endDate    DateTime
+  status     String    @default("OPEN") // OPEN, CLOSED, LOCKED
+  closedAt   DateTime?
+  closedById String?
+  createdAt  DateTime  @default(now())
+
+  @@index([periodName])
+}
+
+model FinancialAlert {
+  id            String   @id @default(uuid())
+  alertType     String   // OVERDUE_INVOICE, LOW_BANK_BALANCE, UNMATCHED_PAYMENT, UNBALANCED_JOURNAL, CREDIT_LIMIT_EXCEEDED
+  severity      String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  title         String
+  message       String
+  referenceType String?
+  referenceId   String?
+  isRead        Boolean  @default(false)
+  isDismissed   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([alertType])
+  @@index([isRead])
 }
 
 model AuditLog {
@@ -961,3 +1504,163 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([timestamp])
 }
+
+// ================= PHASE 7: AUDIT MANAGEMENT & COMPLIANCE =================
+
+enum AuditType {
+  INVENTORY
+  PRODUCTION
+  FINANCIAL
+  FOOD_SAFETY
+  COMPLIANCE
+  GENERAL
+}
+
+enum AuditStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+}
+
+enum FindingCategory {
+  INVENTORY
+  PRODUCTION
+  QUALITY
+  FINANCIAL
+  HYGIENE
+  REGULATORY
+  GENERAL
+}
+
+enum FindingSeverity {
+  MINOR
+  MAJOR
+  CRITICAL
+}
+
+enum FindingStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum FoodSafetyCategory {
+  HYGIENE
+  TEMPERATURE
+  OIL_POLAR_COMPOUNDS
+  PEST_CONTROL
+  EQUIPMENT_SANITIZATION
+  EXPIRY_VERIFICATION
+}
+
+model UserActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, APPROVE, REJECT, DISPATCH, EXPORT
+  entityType  String   // AUTH, ORDER, INVOICE, PRODUCTION, PAYMENT, EXPENSE, INVENTORY, MASTER, AUDIT
+  entityId    String?
+  description String
+  details     String?  // JSON formatted string
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([timestamp])
+}
+
+model AuditSession {
+  id              String               @id @default(uuid())
+  auditNumber     String               @unique // AUD-2026-0001
+  title           String
+  auditType       AuditType            @default(GENERAL)
+  status          AuditStatus          @default(SCHEDULED)
+  scheduledDate   DateTime
+  completedDate   DateTime?
+  auditorId       String
+  auditor         User                 @relation("AuditorSessions", fields: [auditorId], references: [id])
+  scope           String?
+  summary         String?
+  complianceScore Decimal?             @db.Decimal(5, 2) // e.g. 98.50%
+  findings        AuditFinding[]
+  inventoryItems  InventoryAuditItem[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @default(now()) @updatedAt
+
+  @@index([auditType])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model AuditFinding {
+  id               String          @id @default(uuid())
+  auditSessionId   String?
+  auditSession     AuditSession?   @relation(fields: [auditSessionId], references: [id], onDelete: Cascade)
+  findingNumber    String          @unique // FND-2026-0001
+  title            String
+  category         FindingCategory @default(GENERAL)
+  severity         FindingSeverity @default(MINOR)
+  status           FindingStatus   @default(OPEN)
+  description      String
+  correctiveAction String?
+  assignedToId     String?
+  assignedTo       User?           @relation("AssignedFindings", fields: [assignedToId], references: [id])
+  targetDate       DateTime?
+  resolvedDate     DateTime?
+  resolutionNotes  String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+
+  @@index([auditSessionId])
+  @@index([category])
+  @@index([severity])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model InventoryAuditItem {
+  id                String       @id @default(uuid())
+  auditSessionId    String
+  auditSession      AuditSession @relation(fields: [auditSessionId], references: [id], onDelete: Cascade)
+  itemType          String       // RAW_MATERIAL, PACKAGING, FINISHED_GOODS
+  itemId            String
+  itemName          String
+  itemCode          String?
+  systemStock       Decimal      @db.Decimal(12, 3)
+  physicalStock     Decimal      @db.Decimal(12, 3)
+  varianceQuantity  Decimal      @db.Decimal(12, 3)
+  unitCost          Decimal      @default(0.0) @db.Decimal(12, 2)
+  varianceValue     Decimal      @default(0.0) @db.Decimal(12, 2)
+  discrepancyReason String?
+  status            String       @default("MATCHED") // MATCHED, DISCREPANCY_FLAGGED, RECONCILED
+  createdAt         DateTime     @default(now())
+
+  @@index([auditSessionId])
+  @@index([itemType, itemId])
+}
+
+model FoodSafetyCompliance {
+  id               String             @id @default(uuid())
+  checkNumber      String             @unique // FSSAI-2026-0001
+  checkDate        DateTime
+  category         FoodSafetyCategory @default(HYGIENE)
+  standardRequired String
+  actualObserved   String
+  isCompliant      Boolean            @default(true)
+  inspectorId      String
+  inspector        User               @relation("InspectorFoodSafety", fields: [inspectorId], references: [id])
+  remarks          String?
+  correctiveAction String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+
+  @@index([category])
+  @@index([checkDate])
+  @@index([isCompliant])
+}
+

@@ -1,8 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { Role, OrderStatus } from '@prisma/client';
-import prisma from '../db/client.js';
+import { Role } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.js';
-import { AppError } from '../middleware/errorHandler.js';
 import { OrderService } from '../services/order.service.js';
 
 export class OrderController {
@@ -10,27 +8,41 @@ export class OrderController {
     try {
       const userId = req.user!.id;
       const callerRole = req.user!.role;
-      const { customerId, items, orderNotes } = req.body;
+      const { customerId, items, orderNotes, deliveryDate, paymentTerms, status } = req.body;
       const order = await OrderService.createOrder({
         customerId,
         salesmanId: userId,
         callerRole,
         items,
         orderNotes,
+        deliveryDate,
+        paymentTerms,
+        status,
       });
       res.status(201).json({ success: true, data: order });
+    } catch (err) { next(err); }
+  }
+
+  static async submitOrder(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const order = await OrderService.submitOrder(id, req.user!.id);
+      res.json({ success: true, data: order });
     } catch (err) { next(err); }
   }
 
   static async updateOrder(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { items, orderNotes } = req.body;
+      const { items, orderNotes, deliveryDate, paymentTerms } = req.body;
       const order = await OrderService.updateOrder({
         orderId: id,
         items,
         orderNotes,
+        deliveryDate,
+        paymentTerms,
         adminUserId: req.user!.id,
+        callerRole: req.user!.role,
       });
       res.json({ success: true, data: order });
     } catch (err) { next(err); }
@@ -38,49 +50,27 @@ export class OrderController {
 
   static async getOrders(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const where: any = {};
-      if (req.user?.role === Role.SALESMAN) {
-        where.salesmanId = req.user.id;
-      }
-
-      const orders = await prisma.salesOrder.findMany({
-        where,
-        include: {
-          customer: true,
-          salesman: { select: { id: true, fullName: true, email: true } },
-          items: { include: { product: true } },
-          invoice: { select: { id: true, invoiceNumber: true, status: true } },
-        },
-        orderBy: { orderDate: 'desc' },
+      const { page, limit, status, customerId, search, startDate, endDate } = req.query;
+      const orders = await OrderService.getOrders({
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        status: status ? (String(status) as any) : undefined,
+        customerId: customerId ? String(customerId) : undefined,
+        search: search ? String(search) : undefined,
+        startDate: startDate ? String(startDate) : undefined,
+        endDate: endDate ? String(endDate) : undefined,
+        callerRole: req.user?.role,
+        callerUserId: req.user?.id,
       });
-
-      res.json({ success: true, data: orders });
+      res.json({ success: true, ...orders });
     } catch (err) { next(err); }
   }
 
   static async getOrderById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const order = await prisma.salesOrder.findUnique({
-        where: { id },
-        include: {
-          customer: true,
-          salesman: { select: { id: true, fullName: true, email: true } },
-          items: { include: { product: true } },
-          invoice: true,
-          dispatch: true,
-        },
-      });
-
-      if (!order) throw new AppError('Order not found.', 404);
-
-      if (req.user?.role === Role.SALESMAN && order.salesmanId !== req.user.id) {
-        throw new AppError('Forbidden: You can only view your own orders.', 403);
-      }
-
-      const stockCheck = await OrderService.checkStockAvailability(order.id);
-
-      res.json({ success: true, data: { ...order, stockCheck } });
+      const order = await OrderService.getOrderById(id, req.user?.role, req.user?.id);
+      res.json({ success: true, data: order });
     } catch (err) { next(err); }
   }
 
@@ -95,7 +85,7 @@ export class OrderController {
   static async approveOrder(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const order = await OrderService.approveOrder(id, req.user!.id);
+      const order = await OrderService.approveOrder(id, req.user!.id, req.user?.role);
       res.json({ success: true, data: order });
     } catch (err) { next(err); }
   }
@@ -105,6 +95,15 @@ export class OrderController {
       const { id } = req.params;
       const { reason } = req.body;
       const order = await OrderService.rejectOrder(id, reason || 'Rejected by Admin', req.user!.id);
+      res.json({ success: true, data: order });
+    } catch (err) { next(err); }
+  }
+
+  static async cancelOrder(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const order = await OrderService.cancelOrder(id, req.user!.id, reason);
       res.json({ success: true, data: order });
     } catch (err) { next(err); }
   }

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { Layout } from './components/layout/Layout.js';
+import { ErrorBoundary } from './components/common/ErrorBoundary.js';
 
 // Pages
 import { LoginPage } from './pages/auth/LoginPage.js';
@@ -9,6 +10,11 @@ import { DashboardRouter } from './pages/dashboard/DashboardRouter.js';
 import { OrdersListPage } from './pages/orders/OrdersListPage.js';
 import { NewOrderPage } from './pages/orders/NewOrderPage.js';
 import { OrderDetailPage } from './pages/orders/OrderDetailPage.js';
+import { SalesDashboardPage } from './pages/sales/SalesDashboardPage.js';
+import { SalesmanMobileOrderPage } from './pages/sales/SalesmanMobileOrderPage.js';
+import { StockAllocationPage } from './pages/sales/StockAllocationPage.js';
+import { SalesReturnsPage } from './pages/sales/SalesReturnsPage.js';
+import { CreditNotesPage } from './pages/sales/CreditNotesPage.js';
 import { InvoicesListPage } from './pages/invoices/InvoicesListPage.js';
 import { InvoiceDetailPage } from './pages/invoices/InvoiceDetailPage.js';
 import { DispatchListPage } from './pages/dispatches/DispatchListPage.js';
@@ -45,6 +51,28 @@ import { ProductionReportPage } from './pages/reports/ProductionReportPage.js';
 import { ExportCentrePage } from './pages/reports/ExportCentrePage.js';
 import { AuditLogsPage } from './pages/audit/AuditLogsPage.js';
 
+// Phase 7 Audit Management & Compliance Pages
+import { AuditDashboardPage } from './pages/audit/AuditDashboardPage.js';
+import { AuditTrailPage } from './pages/audit/AuditTrailPage.js';
+import { InventoryAuditPage } from './pages/audit/InventoryAuditPage.js';
+import { AuditFindingsPage } from './pages/audit/AuditFindingsPage.js';
+import { CompliancePage } from './pages/audit/CompliancePage.js';
+import { AuditReportsExportPage } from './pages/audit/AuditReportsExportPage.js';
+
+// Phase 6 Finance & Accounting Pages
+import { FinancialDashboardPage } from './pages/finance/FinancialDashboardPage.js';
+import { CustomerPaymentsPage } from './pages/finance/CustomerPaymentsPage.js';
+import { SupplierPaymentsPage } from './pages/finance/SupplierPaymentsPage.js';
+import { AccountsReceivablePage } from './pages/finance/AccountsReceivablePage.js';
+import { AccountsPayablePage } from './pages/finance/AccountsPayablePage.js';
+import { ExpensesPage } from './pages/finance/ExpensesPage.js';
+import { CashBankAccountsPage } from './pages/finance/CashBankAccountsPage.js';
+import { CashbookBankbookPage } from './pages/finance/CashbookBankbookPage.js';
+import { GeneralLedgerPage } from './pages/finance/GeneralLedgerPage.js';
+import { TrialBalancePage } from './pages/finance/TrialBalancePage.js';
+import { ProfitLossPage } from './pages/finance/ProfitLossPage.js';
+import { BankReconciliationPage } from './pages/finance/BankReconciliationPage.js';
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -58,8 +86,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
@@ -74,7 +103,12 @@ export const App: React.FC = () => {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardRouter />} />
 
-            {/* Orders */}
+            {/* Orders & Sales */}
+            <Route path="sales/dashboard" element={<SalesDashboardPage />} />
+            <Route path="sales/mobile-order" element={<SalesmanMobileOrderPage />} />
+            <Route path="sales/allocations" element={<StockAllocationPage />} />
+            <Route path="sales/returns" element={<SalesReturnsPage />} />
+            <Route path="sales/credit-notes" element={<CreditNotesPage />} />
             <Route path="orders" element={<OrdersListPage />} />
             <Route path="orders/new" element={<NewOrderPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
@@ -119,6 +153,20 @@ export const App: React.FC = () => {
             {/* Payments & Ageing */}
             <Route path="payments" element={<PaymentsListPage />} />
 
+            {/* Phase 6 Financial Management & Accounting */}
+            <Route path="finance/dashboard" element={<FinancialDashboardPage />} />
+            <Route path="finance/accounts" element={<CashBankAccountsPage />} />
+            <Route path="finance/cashbook-bankbook" element={<CashbookBankbookPage />} />
+            <Route path="finance/customer-payments" element={<CustomerPaymentsPage />} />
+            <Route path="finance/receivables" element={<AccountsReceivablePage />} />
+            <Route path="finance/supplier-payments" element={<SupplierPaymentsPage />} />
+            <Route path="finance/payables" element={<AccountsPayablePage />} />
+            <Route path="finance/expenses" element={<ExpensesPage />} />
+            <Route path="finance/general-ledger" element={<GeneralLedgerPage />} />
+            <Route path="finance/trial-balance" element={<TrialBalancePage />} />
+            <Route path="finance/profit-loss" element={<ProfitLossPage />} />
+            <Route path="finance/reconciliation" element={<BankReconciliationPage />} />
+
             {/* Master Data */}
             <Route path="customers" element={<CustomersPage />} />
             <Route path="products" element={<ProductsPage />} />
@@ -132,14 +180,21 @@ export const App: React.FC = () => {
             <Route path="reports/ageing" element={<AgeingReportPage />} />
             <Route path="reports/export" element={<ExportCentrePage />} />
 
-            {/* Audit Logs */}
-            <Route path="audit-logs" element={<AuditLogsPage />} />
+            {/* Audit Logs & Phase 7 Audit Management */}
+            <Route path="audit-logs" element={<AuditTrailPage />} />
+            <Route path="audit/dashboard" element={<AuditDashboardPage />} />
+            <Route path="audit/trail" element={<AuditTrailPage />} />
+            <Route path="audit/inventory" element={<InventoryAuditPage />} />
+            <Route path="audit/findings" element={<AuditFindingsPage />} />
+            <Route path="audit/compliance" element={<CompliancePage />} />
+            <Route path="audit/reports" element={<AuditReportsExportPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -1307,4 +1307,94 @@ export class MasterController {
       res.status(201).json({ success: true, data: conversion });
     } catch (err) { next(err); }
   }
+
+  // ==========================================
+  // DATASET IMPORT / BULK IMPORT
+  // ==========================================
+  static async importSampleDataset(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { importExtendedDataset } = await import('../scripts/import-extended-dataset.js');
+      const result = await importExtendedDataset();
+      res.json({
+        success: true,
+        message: 'Comprehensive enterprise dataset imported successfully.',
+        data: result,
+      });
+    } catch (err) { next(err); }
+  }
+
+  static async bulkImportCustomers(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { customers } = req.body;
+      if (!Array.isArray(customers) || customers.length === 0) {
+        throw new AppError('Array of customers is required.', 400);
+      }
+
+      const created: any[] = [];
+      for (const c of customers) {
+        if (!c.name || !c.billingAddress || !c.contactNumber) continue;
+        const cust = await prisma.customer.create({
+          data: {
+            name: c.name.trim(),
+            type: c.type === 'DISTRIBUTOR' ? CustomerType.DISTRIBUTOR : CustomerType.RETAILER,
+            gstin: c.gstin ? c.gstin.trim().toUpperCase() : null,
+            billingAddress: c.billingAddress.trim(),
+            shippingAddress: (c.shippingAddress || c.billingAddress).trim(),
+            city: c.city?.trim() || null,
+            district: c.district?.trim() || null,
+            state: c.state || 'Tamil Nadu',
+            stateCode: c.stateCode || '33',
+            contactPerson: c.contactPerson?.trim() || null,
+            contactNumber: c.contactNumber.trim(),
+            email: c.email?.trim() || null,
+            creditLimit: new Prisma.Decimal(c.creditLimit || 50000.0),
+            paymentTerms: c.paymentTerms || '30 Days',
+            salesmanId: c.salesmanId || null,
+          },
+        });
+        created.push(cust);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Successfully imported ${created.length} customer(s).`,
+        data: created,
+      });
+    } catch (err) { next(err); }
+  }
+
+  static async bulkImportSuppliers(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { suppliers } = req.body;
+      if (!Array.isArray(suppliers) || suppliers.length === 0) {
+        throw new AppError('Array of suppliers is required.', 400);
+      }
+
+      const created: any[] = [];
+      for (const s of suppliers) {
+        if (!s.name || !s.address || !s.contactNumber) continue;
+        const supp = await prisma.supplier.create({
+          data: {
+            name: s.name.trim(),
+            gstin: s.gstin ? s.gstin.trim().toUpperCase() : null,
+            address: s.address.trim(),
+            city: s.city?.trim() || null,
+            state: s.state || 'Tamil Nadu',
+            stateCode: s.stateCode || '33',
+            contactPerson: s.contactPerson?.trim() || null,
+            contactNumber: s.contactNumber.trim(),
+            email: s.email?.trim() || null,
+            paymentTerms: s.paymentTerms || '30 Days',
+          },
+        });
+        created.push(supp);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Successfully imported ${created.length} supplier(s).`,
+        data: created,
+      });
+    } catch (err) { next(err); }
+  }
 }

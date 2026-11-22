@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client.js';
-import { Truck, Search, Plus, Edit2, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Truck, Search, Plus, Edit2, Trash2, CheckCircle2, AlertCircle, Database, Upload, FileText, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.js';
 
 export const SuppliersPage: React.FC = () => {
@@ -11,6 +11,9 @@ export const SuppliersPage: React.FC = () => {
   // Modals & alerts
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any | null>(null);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [csvText, setCsvText] = useState('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -83,6 +86,61 @@ export const SuppliersPage: React.FC = () => {
     }
   };
 
+  const handleImportSampleDataset = async () => {
+    if (!window.confirm('Import the comprehensive South Indian food manufacturing enterprise dataset? This will populate verified suppliers, customers, raw materials, BOM recipes and compliance records.')) return;
+    setErrorMsg(null);
+    setIsImporting(true);
+    try {
+      await api.post('/master/import-sample-dataset');
+      setSuccessMsg('Comprehensive enterprise dataset imported successfully! Suppliers registry refreshed.');
+      await loadData();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to import dataset');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleImportCsv = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!csvText.trim()) {
+      setErrorMsg('Please paste CSV text or load sample data.');
+      return;
+    }
+
+    try {
+      const lines = csvText.trim().split('\n').filter((l) => l.trim().length > 0);
+      const rows = lines
+        .map((line) => {
+          const parts = line.split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
+          return {
+            name: parts[0] || '',
+            gstin: parts[1] || '',
+            address: parts[2] || '',
+            state: parts[3] || 'Tamil Nadu',
+            stateCode: parts[4] || '33',
+            contactPerson: parts[5] || '',
+            contactNumber: parts[6] || '',
+            email: parts[7] || '',
+          };
+        })
+        .filter((s) => s.name && s.address && s.contactNumber);
+
+      if (rows.length === 0) {
+        throw new Error('No valid supplier rows found in CSV. Format: Name,GSTIN,Address,State,StateCode,ContactPerson,Phone,Email');
+      }
+
+      await api.post('/master/suppliers/bulk-import', { suppliers: rows });
+      setSuccessMsg(`Successfully imported ${rows.length} suppliers from CSV!`);
+      setIsCsvModalOpen(false);
+      setCsvText('');
+      loadData();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'CSV Import failed');
+    }
+  };
+
   const handleDeleteSupplier = async (supplier: any) => {
     if (!window.confirm(`Are you sure you want to delete supplier ${supplier.name}?`)) return;
     setErrorMsg(null);
@@ -115,24 +173,42 @@ export const SuppliersPage: React.FC = () => {
           </p>
         </div>
         {canEdit && (
-          <button
-            onClick={() => {
-              setFormData({
-                name: '',
-                gstin: '',
-                address: '',
-                state: 'Tamil Nadu',
-                stateCode: '33',
-                contactPerson: '',
-                contactNumber: '',
-                email: '',
-              });
-              setIsCreateOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-brand-600 text-white hover:bg-brand-700 shadow-sm transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Supplier
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleImportSampleDataset}
+              disabled={isImporting}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-sm disabled:opacity-50"
+              title="Import 8 South Indian agricultural and packaging suppliers, raw materials, customers and products"
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" /> : <Database className="w-4 h-4 text-emerald-600" />}
+              {isImporting ? 'Importing Dataset...' : 'Import Dataset'}
+            </button>
+            <button
+              onClick={() => setIsCsvModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors shadow-sm"
+              title="Import suppliers from CSV text"
+            >
+              <Upload className="w-4 h-4 text-blue-600" /> Import CSV
+            </button>
+            <button
+              onClick={() => {
+                setFormData({
+                  name: '',
+                  gstin: '',
+                  address: '',
+                  state: 'Tamil Nadu',
+                  stateCode: '33',
+                  contactPerson: '',
+                  contactNumber: '',
+                  email: '',
+                });
+                setIsCreateOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-brand-600 text-white hover:bg-brand-700 shadow-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Supplier
+            </button>
+          </div>
         )}
       </div>
 
@@ -364,6 +440,77 @@ export const SuppliersPage: React.FC = () => {
                   className="px-4 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors shadow-sm"
                 >
                   {editingSupplier ? 'Save Supplier' : 'Register Supplier'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {isCsvModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 max-w-lg w-full p-6 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-blue-600" />
+                <h2 className="text-base font-bold text-gray-900">Import Suppliers from CSV</h2>
+              </div>
+              <button
+                onClick={() => setIsCsvModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-3">
+              Paste comma-separated rows. Columns required:<br />
+              <code className="text-brand-600 font-mono text-[11px] bg-gray-50 px-1 py-0.5 rounded">
+                Name, GSTIN, Address, State, StateCode, ContactPerson, Phone, Email
+              </code>
+            </p>
+
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-semibold text-gray-700">CSV Data:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCsvText(
+                    `"Salem Agro Refineries","33AAACS9999Z1Z0","Bazaar St, Salem","Tamil Nadu","33","K. Sundar","+91 94432 11990","sales@salemagro.in"\n` +
+                    `"Bangalore Corrugated Boxes Ltd","29AABCB8888Y1Z1","Peenya Indl Area, Bengaluru","Karnataka","29","R. Prasad","+91 98450 44556","orders@bangalorebox.com"\n` +
+                    `"Calicut Spices Extraction","32AABCC7777X1Z2","Big Bazaar, Kozhikode","Kerala","32","M. Joseph","+91 98471 66778","calicutspices@gmail.com"`
+                  );
+                }}
+                className="text-xs text-brand-600 hover:underline flex items-center gap-1"
+              >
+                <FileText className="w-3.5 h-3.5" /> Load Sample Rows
+              </button>
+            </div>
+
+            <form onSubmit={handleImportCsv} className="space-y-4">
+              <textarea
+                rows={6}
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+                placeholder="Paste CSV rows here or click 'Load Sample Rows'..."
+                className="w-full px-3 py-2 text-xs font-mono border border-gray-300 rounded-lg focus:ring-1 focus:ring-brand-500"
+                required
+              />
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCsvModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800 rounded-lg border border-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                >
+                  Import Rows
                 </button>
               </div>
             </form>

@@ -22,7 +22,14 @@ import {
   ShieldCheck,
   Boxes,
   Factory,
+  RotateCcw,
   X,
+  Wallet,
+  BookOpen,
+  CreditCard,
+  FileSpreadsheet,
+  Scale,
+  PieChart,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -96,6 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             Sales Activities
           </div>
           <nav className="space-y-1">
+            <NavLink to="/sales/mobile-order" onClick={handleNavClick} className={linkClass}>
+              <PlusCircle className="w-4 h-4 text-brand-600" />
+              Quick Mobile Order
+            </NavLink>
             <NavLink to="/orders/new" onClick={handleNavClick} className={linkClass}>
               <PlusCircle className="w-4 h-4 text-brand-600" />
               New Order
@@ -123,9 +134,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             Order & Dispatch
           </div>
           <nav className="space-y-1">
+            <NavLink to="/sales/dashboard" onClick={handleNavClick} className={linkClass}>
+              <TrendingUp className="w-4 h-4 text-brand-600" />
+              Sales Dashboard
+            </NavLink>
             <NavLink to="/orders" onClick={handleNavClick} className={linkClass}>
               <ShoppingCart className="w-4 h-4" />
               Incoming Orders
+            </NavLink>
+            <NavLink to="/sales/allocations" onClick={handleNavClick} className={linkClass}>
+              <Layers className="w-4 h-4 text-amber-600" />
+              FG Allocations
             </NavLink>
             <NavLink to="/invoices" onClick={handleNavClick} className={linkClass}>
               <FileText className="w-4 h-4" />
@@ -135,13 +154,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <Truck className="w-4 h-4" />
               Dispatches
             </NavLink>
+            <NavLink to="/sales/returns" onClick={handleNavClick} className={linkClass}>
+              <RotateCcw className="w-4 h-4 text-red-500" />
+              Sales Returns
+            </NavLink>
+            <NavLink to="/sales/credit-notes" onClick={handleNavClick} className={linkClass}>
+              <ShieldCheck className="w-4 h-4 text-indigo-500" />
+              Credit Notes
+            </NavLink>
             <NavLink to="/purchases" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Raw Purchases
-            </NavLink>
-            <NavLink to="/payments" onClick={handleNavClick} className={linkClass}>
-              <DollarSign className="w-4 h-4" />
-              Payments & Ageing
             </NavLink>
             <NavLink to="/production/orders" onClick={handleNavClick} className={linkClass}>
               <Factory className="w-4 h-4 text-indigo-600" />
@@ -241,9 +264,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <Download className="w-4 h-4" />
               Export Centre
             </NavLink>
-            <NavLink to="/audit-logs" onClick={handleNavClick} className={linkClass}>
-              <Shield className="w-4 h-4" />
-              Audit Log
+            <NavLink to="/audit/dashboard" onClick={handleNavClick} className={linkClass}>
+              <Shield className="w-4 h-4 text-brand-600" />
+              Audit Dashboard
+            </NavLink>
+            <NavLink to="/audit/trail" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4" />
+              Audit Trail
             </NavLink>
           </nav>
         </div>
@@ -256,9 +283,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             Executive Controls
           </div>
           <nav className="space-y-1">
+            <NavLink to="/sales/dashboard" onClick={handleNavClick} className={linkClass}>
+              <TrendingUp className="w-4 h-4 text-brand-600" />
+              Sales Dashboard
+            </NavLink>
             <NavLink to="/orders" onClick={handleNavClick} className={linkClass}>
               <ShoppingCart className="w-4 h-4" />
               Sales & Orders
+            </NavLink>
+            <NavLink to="/sales/allocations" onClick={handleNavClick} className={linkClass}>
+              <Layers className="w-4 h-4 text-amber-600" />
+              FG Allocations
             </NavLink>
             <NavLink to="/production/runs" onClick={handleNavClick} className={linkClass}>
               <ClipboardList className="w-4 h-4" />
@@ -276,13 +311,72 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <TrendingUp className="w-4 h-4" />
               Cost & Margins
             </NavLink>
-            <NavLink to="/reports/ageing" onClick={handleNavClick} className={linkClass}>
-              <DollarSign className="w-4 h-4" />
-              Receivables Ageing
+            <NavLink to="/audit/dashboard" onClick={handleNavClick} className={linkClass}>
+              <Shield className="w-4 h-4 text-brand-600" />
+              Audit Dashboard
             </NavLink>
-            <NavLink to="/audit-logs" onClick={handleNavClick} className={linkClass}>
-              <Shield className="w-4 h-4" />
+            <NavLink to="/audit/trail" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4" />
               Audit Trail
+            </NavLink>
+          </nav>
+        </div>
+      )}
+
+      {/* FINANCE & ACCOUNTS (ADMIN, OWNER, ACCOUNTANT_AUDITOR) */}
+      {(role === 'ADMIN' || role === 'OWNER' || role === 'ACCOUNTANT_AUDITOR') && (
+        <div>
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Finance & Accounts
+          </div>
+          <nav className="space-y-1">
+            <NavLink to="/finance/dashboard" onClick={handleNavClick} className={linkClass}>
+              <TrendingUp className="w-4 h-4 text-brand-600" />
+              Financial Dashboard
+            </NavLink>
+            <NavLink to="/finance/accounts" onClick={handleNavClick} className={linkClass}>
+              <Wallet className="w-4 h-4 text-emerald-600" />
+              Cash & Bank Accounts
+            </NavLink>
+            <NavLink to="/finance/cashbook-bankbook" onClick={handleNavClick} className={linkClass}>
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              Cashbook & Bankbook
+            </NavLink>
+            <NavLink to="/finance/customer-payments" onClick={handleNavClick} className={linkClass}>
+              <DollarSign className="w-4 h-4 text-emerald-600" />
+              Customer Receipts
+            </NavLink>
+            <NavLink to="/finance/receivables" onClick={handleNavClick} className={linkClass}>
+              <Users className="w-4 h-4 text-indigo-600" />
+              Accounts Receivable
+            </NavLink>
+            <NavLink to="/finance/supplier-payments" onClick={handleNavClick} className={linkClass}>
+              <DollarSign className="w-4 h-4 text-rose-600" />
+              Supplier Payments
+            </NavLink>
+            <NavLink to="/finance/payables" onClick={handleNavClick} className={linkClass}>
+              <Truck className="w-4 h-4 text-amber-600" />
+              Accounts Payable
+            </NavLink>
+            <NavLink to="/finance/expenses" onClick={handleNavClick} className={linkClass}>
+              <CreditCard className="w-4 h-4 text-purple-600" />
+              Expenses (OPEX)
+            </NavLink>
+            <NavLink to="/finance/general-ledger" onClick={handleNavClick} className={linkClass}>
+              <FileSpreadsheet className="w-4 h-4 text-teal-600" />
+              General Ledger & Journals
+            </NavLink>
+            <NavLink to="/finance/trial-balance" onClick={handleNavClick} className={linkClass}>
+              <Scale className="w-4 h-4 text-amber-600" />
+              Trial Balance
+            </NavLink>
+            <NavLink to="/finance/profit-loss" onClick={handleNavClick} className={linkClass}>
+              <PieChart className="w-4 h-4 text-brand-600" />
+              Profit & Loss (P&L)
+            </NavLink>
+            <NavLink to="/finance/reconciliation" onClick={handleNavClick} className={linkClass}>
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              Bank Reconciliation (BRS)
             </NavLink>
           </nav>
         </div>
@@ -328,6 +422,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             <NavLink to="/inventory/opening-stock" onClick={handleNavClick} className={linkClass}>
               <Archive className="w-4 h-4" />
               Opening Stock
+            </NavLink>
+          </nav>
+        </div>
+      )}
+
+      {/* AUDIT & COMPLIANCE */}
+      {(role === 'ADMIN' || role === 'OWNER' || role === 'ACCOUNTANT_AUDITOR') && (
+        <div>
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Audit & Compliance
+          </div>
+          <nav className="space-y-1">
+            <NavLink to="/audit/dashboard" onClick={handleNavClick} className={linkClass}>
+              <Shield className="w-4 h-4 text-brand-600" />
+              Audit Dashboard
+            </NavLink>
+            <NavLink to="/audit/trail" onClick={handleNavClick} className={linkClass}>
+              <History className="w-4 h-4 text-blue-600" />
+              System Audit Trail
+            </NavLink>
+            <NavLink to="/audit/inventory" onClick={handleNavClick} className={linkClass}>
+              <Boxes className="w-4 h-4 text-amber-600" />
+              Physical Stock Audit
+            </NavLink>
+            <NavLink to="/audit/findings" onClick={handleNavClick} className={linkClass}>
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+              Findings & CAPA
+            </NavLink>
+            <NavLink to="/audit/compliance" onClick={handleNavClick} className={linkClass}>
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Food Safety & Expiry
+            </NavLink>
+            <NavLink to="/audit/reports" onClick={handleNavClick} className={linkClass}>
+              <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+              Reports & Export Centre
             </NavLink>
           </nav>
         </div>

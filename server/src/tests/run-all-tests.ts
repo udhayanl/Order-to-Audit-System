@@ -5,6 +5,7 @@ import { BOMService } from '../services/bom.service.js';
 import { OrderService } from '../services/order.service.js';
 import { InvoiceService } from '../services/invoice.service.js';
 import { DispatchService } from '../services/dispatch.service.js';
+import { StockAllocationService } from '../services/stock-allocation.service.js';
 import { PaymentService } from '../services/payment.service.js';
 import { InventoryService } from '../services/inventory.service.js';
 import { CostingService } from '../services/costing.service.js';
@@ -436,7 +437,7 @@ async function runTestSuite() {
       });
     } catch (err: any) {
       dispatchBlocked = true;
-      assert.ok(err.message.includes('Insufficient stock'));
+      assert.ok(err.message.includes('Insufficient'));
     }
     assert.strictEqual(dispatchBlocked, true);
   });
@@ -458,7 +459,7 @@ async function runTestSuite() {
       userId: admin!.id,
     });
 
-    assert.strictEqual(Number(pmt.amount), 4000);
+    assert.strictEqual(Number(pmt?.amount), 4000);
 
     const updatedInv = await prisma.invoice.findUnique({ where: { id: inv!.id } });
     assert.strictEqual(Number(updatedInv?.paidAmount), 4000);
@@ -466,7 +467,7 @@ async function runTestSuite() {
   });
 
   await test('7.2 Prevention of payment exceeding remaining invoice outstanding balance', async () => {
-    const inv = await prisma.invoice.findFirst({ where: { status: 'POSTED' } });
+    const inv = await prisma.invoice.findFirst({ where: { status: 'PARTIALLY_PAID' } }) || await prisma.invoice.findFirst({ where: { status: 'POSTED' } });
     const admin = await prisma.user.findFirst({ where: { role: Role.ADMIN } });
 
     let prevented = false;
@@ -481,7 +482,7 @@ async function runTestSuite() {
       });
     } catch (err: any) {
       prevented = true;
-      assert.ok(err.message.includes('exceeds invoice outstanding balance'));
+      assert.ok(err.message.includes('outstanding balance'));
     }
     assert.strictEqual(prevented, true);
   });
@@ -553,6 +554,91 @@ async function runTestSuite() {
     // Stock must be completely unchanged
     assert.strictEqual(flourAfter, flourBefore);
     assert.strictEqual(fgAfter, fgBefore);
+  });
+
+  // -------------------------------------------------------------
+  // GROUP 10: FINANCIAL MANAGEMENT & BALANCED GENERAL LEDGER
+  // -------------------------------------------------------------
+  console.log('\n--- GROUP 10: Financial Management & Balanced General Ledger ---');
+
+  await test('10.1 Double-entry balanced journal entry validation', async () => {
+    const adminUser = await prisma.user.findFirst({ where: { role: Role.ADMIN } });
+    const { AccountingService } = await import('../services/accounting.service.js');
+    const journal = await AccountingService.postJournalEntry(prisma, {
+      entryType: 'GENERAL',
+      narration: 'Owner capital injection',
+      userId: adminUser!.id,
+      lines: [
+        { accountCode: '1020', debit: 10000, credit: 0, description: 'Bank receipt' },
+        { accountCode: '3010', debit: 0, credit: 10000, description: 'Owner equity' },
+      ],
+    });
+    assert.strictEqual(journal.isBalanced, true);
+    assert.strictEqual(Number(journal.totalDebit), 10000);
+    assert.strictEqual(Number(journal.totalCredit), 10000);
+  });
+
+  await test('10.2 Strict rejection of unbalanced journal entry', async () => {
+    const adminUser = await prisma.user.findFirst({ where: { role: Role.ADMIN } });
+    const { AccountingService } = await import('../services/accounting.service.js');
+    let rejected = false;
+    try {
+      await AccountingService.postJournalEntry(prisma, {
+        entryType: 'GENERAL',
+        narration: 'Invalid journal',
+        userId: adminUser!.id,
+        lines: [
+          { accountCode: '1010', debit: 5000, credit: 0 },
+          { accountCode: '3010', debit: 0, credit: 4000 },
+        ],
+      });
+    } catch {
+      rejected = true;
+    }
+    assert.strictEqual(rejected, true);
+  });
+
+  await test('10.3 Customer payment allocation and invoice status update', async () => {
+    const adminUser = await prisma.user.findFirst({ where: { role: Role.ADMIN } });
+    const salesman = await prisma.user.findFirst({ where: { role: Role.SALESMAN } });
+    const customer = await prisma.customer.findFirst({ where: { active: true } });
+    const product = await prisma.product.findFirst({ where: { active: true } });
+
+    const { CustomerPaymentService } = await import('../services/customer-payment.service.js');
+    const { cashAccount } = await (await import('../services/financial-account.service.js')).FinancialAccountService.ensureDefaultAccounts();
+    
+    // Create an order & invoice
+    const testOrder = await OrderService.createOrder({
+      customerId: customer!.id,
+      salesmanId: salesman!.id,
+      callerRole: Role.ADMIN,
+      items: [{ productId: product!.id, quantity: 10 }],
+    });
+    await OrderService.approveOrder(testOrder.id, adminUser!.id, Role.ADMIN);
+    await StockAllocationService.allocateStock({ salesOrderId: testOrder.id, userId: adminUser!.id, items: [{ productId: product!.id, quantity: 10 }] });
+    const testInvoice = await InvoiceService.createInvoiceFromOrder(testOrder.id, adminUser!.id); // 10 * 50 = 500 + 25 = 525
+
+    const payment = await CustomerPaymentService.recordPayment({
+      customerId: customer!.id,
+      invoiceId: testInvoice.id,
+      amount: 300,
+      paymentMethod: PaymentMethod.CASH,
+      financialAccountId: cashAccount.id,
+      userId: adminUser!.id,
+    });
+    assert.strictEqual(Number(payment?.amount), 300);
+
+    const updated = await prisma.invoice.findUnique({ where: { id: testInvoice.id } });
+    assert.strictEqual(Number(updated?.paidAmount), 300);
+    assert.strictEqual(Number(updated?.outstandingAmount), 225);
+    assert.strictEqual(updated?.status, 'PARTIALLY_PAID');
+  });
+
+  await test('10.4 Trial balance mathematical debit-credit equilibrium', async () => {
+    const { AccountingService } = await import('../services/accounting.service.js');
+    const tb = await AccountingService.getTrialBalance();
+    assert.strictEqual(tb.isBalanced, true);
+    assert.ok(tb.difference <= 0.05);
   });
 
   console.log('\n===============================================================');

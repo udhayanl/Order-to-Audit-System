@@ -9,7 +9,7 @@ export class ReportService {
    * 1. Sales Register
    */
   static async getSalesRegister(startDate?: Date, endDate?: Date) {
-    const where: any = { status: 'POSTED' };
+    const where: any = { status: { in: ['POSTED', 'PARTIALLY_PAID', 'PAID'] } };
     if (startDate || endDate) {
       where.invoiceDate = {};
       if (startDate) where.invoiceDate.gte = startDate;
@@ -56,7 +56,7 @@ export class ReportService {
    */
   static async getCustomerWiseSales(startDate?: Date, endDate?: Date) {
     const invoices = await prisma.invoice.findMany({
-      where: { status: 'POSTED' },
+      where: { status: { in: ['POSTED', 'PARTIALLY_PAID', 'PAID'] } },
       include: { customer: true, items: true },
     });
 
@@ -101,7 +101,7 @@ export class ReportService {
    */
   static async getProductWiseSales() {
     const items = await prisma.invoiceItem.findMany({
-      where: { invoice: { status: 'POSTED' } },
+      where: { invoice: { status: { in: ['POSTED', 'PARTIALLY_PAID', 'PAID'] } } },
       include: { product: true },
     });
 
@@ -145,7 +145,7 @@ export class ReportService {
    */
   static async getGSTSummary(startDate?: Date, endDate?: Date) {
     const invoices = await prisma.invoice.findMany({
-      where: { status: 'POSTED' },
+      where: { status: { in: ['POSTED', 'PARTIALLY_PAID', 'PAID'] } },
       include: { customer: true, items: true },
     });
 

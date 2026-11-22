@@ -1,7 +1,5 @@
 import { Response, NextFunction } from 'express';
-import prisma from '../db/client.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { AppError } from '../middleware/errorHandler.js';
 import { InvoiceService } from '../services/invoice.service.js';
 
 export class InvoiceController {
@@ -15,35 +13,33 @@ export class InvoiceController {
 
   static async getInvoices(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const invoices = await prisma.invoice.findMany({
-        include: {
-          customer: true,
-          order: true,
-          allocations: { include: { payment: true } },
-          creditNotes: true,
-        },
-        orderBy: { invoiceDate: 'desc' },
+      const { page, limit, search, customerId, status, startDate, endDate } = req.query;
+      const result = await InvoiceService.getInvoices({
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        search: search ? String(search) : undefined,
+        customerId: customerId ? String(customerId) : undefined,
+        status: status ? (String(status) as any) : undefined,
+        startDate: startDate ? String(startDate) : undefined,
+        endDate: endDate ? String(endDate) : undefined,
       });
-      res.json({ success: true, data: invoices });
+      res.json({ success: true, ...result });
     } catch (err) { next(err); }
   }
 
   static async getInvoiceById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const invoice = await prisma.invoice.findUnique({
-        where: { id },
-        include: {
-          customer: true,
-          order: true,
-          items: { include: { product: true } },
-          allocations: { include: { payment: true } },
-          creditNotes: true,
-        },
-      });
-
-      if (!invoice) throw new AppError('Invoice not found.', 404);
+      const invoice = await InvoiceService.getInvoiceById(id);
       res.json({ success: true, data: invoice });
+    } catch (err) { next(err); }
+  }
+
+  static async updateInvoice(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const updated = await InvoiceService.updateInvoice(id, req.body);
+      res.json({ success: true, data: updated });
     } catch (err) { next(err); }
   }
 

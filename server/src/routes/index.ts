@@ -6,6 +6,7 @@ import { MasterController } from '../controllers/master.controller.js';
 import { OrderController } from '../controllers/order.controller.js';
 import { InvoiceController } from '../controllers/invoice.controller.js';
 import { DispatchController } from '../controllers/dispatch.controller.js';
+import { SalesController } from '../controllers/sales.controller.js';
 import { ProductionController } from '../controllers/production.controller.js';
 import { PurchaseController } from '../controllers/purchase.controller.js';
 import { InventoryController } from '../controllers/inventory.controller.js';
@@ -62,6 +63,8 @@ router.patch('/master/customers/:id/status', authenticateJWT, requireRole(Role.A
 router.patch('/customers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchCustomerStatus);
 router.delete('/master/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCustomer);
 router.delete('/customers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteCustomer);
+router.post('/master/customers/bulk-import', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.bulkImportCustomers);
+router.post('/master/import-sample-dataset', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.importSampleDataset);
 
 // Suppliers
 router.get('/master/suppliers', authenticateJWT, MasterController.getSuppliers);
@@ -76,6 +79,7 @@ router.patch('/master/suppliers/:id/status', authenticateJWT, requireRole(Role.A
 router.patch('/suppliers/:id/status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.patchSupplierStatus);
 router.delete('/master/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteSupplier);
 router.delete('/suppliers/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.deleteSupplier);
+router.post('/master/suppliers/bulk-import', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.bulkImportSuppliers);
 
 // Raw Materials
 router.get('/master/raw-materials', authenticateJWT, MasterController.getRawMaterials);
@@ -127,25 +131,69 @@ router.post('/master/uom/convert', authenticateJWT, MasterController.convertUOM)
 router.get('/unit-conversions', authenticateJWT, MasterController.getUnitConversions);
 router.post('/unit-conversions', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), MasterController.createUnitConversion);
 
-// ================= ORDER ROUTES =================
+// ================= ORDER & SALES ROUTES =================
 router.post('/orders', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.createOrder);
+router.post('/sales/orders', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.createOrder);
 router.get('/orders', authenticateJWT, OrderController.getOrders);
+router.get('/sales/orders', authenticateJWT, OrderController.getOrders);
 router.get('/orders/:id', authenticateJWT, OrderController.getOrderById);
+router.get('/sales/orders/:id', authenticateJWT, OrderController.getOrderById);
 router.put('/orders/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.updateOrder);
+router.put('/sales/orders/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.updateOrder);
+router.post('/orders/:id/submit', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.submitOrder);
+router.post('/sales/orders/:id/submit', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.submitOrder);
 router.get('/orders/:id/check-stock', authenticateJWT, OrderController.checkStock);
 router.post('/orders/:id/approve', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.approveOrder);
+router.post('/sales/orders/:id/approve', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.approveOrder);
 router.post('/orders/:id/reject', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.rejectOrder);
+router.post('/sales/orders/:id/reject', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), OrderController.rejectOrder);
+router.post('/orders/:id/cancel', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.cancelOrder);
+router.post('/sales/orders/:id/cancel', authenticateJWT, requireRole(Role.SALESMAN, Role.ADMIN, Role.OWNER), OrderController.cancelOrder);
+
+// ================= STOCK ALLOCATION ROUTES =================
+router.get('/sales/stock-availability', authenticateJWT, SalesController.getStockAvailability);
+router.get('/stock-availability', authenticateJWT, SalesController.getStockAvailability);
+router.post('/orders/:id/allocate', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.allocateOrderStock);
+router.post('/sales/orders/:id/allocate', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.allocateOrderStock);
+router.post('/orders/:id/release-allocation', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.releaseOrderAllocation);
+router.post('/sales/orders/:id/release-allocation', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.releaseOrderAllocation);
+router.post('/stock-allocations/:id/release', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.releaseSpecificAllocation);
+router.get('/stock-allocations', authenticateJWT, SalesController.getAllocations);
+
+// ================= GST BILLING ROUTES =================
+router.post('/gst/calculate', authenticateJWT, SalesController.calculateGST);
+router.get('/gst/configuration', authenticateJWT, SalesController.getTaxConfiguration);
+router.put('/gst/configuration', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.updateTaxConfiguration);
 
 // ================= INVOICE ROUTES =================
 router.post('/invoices/create-from-order', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InvoiceController.createFromOrder);
+router.post('/invoices', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InvoiceController.createFromOrder);
 router.get('/invoices', authenticateJWT, InvoiceController.getInvoices);
 router.get('/invoices/:id', authenticateJWT, InvoiceController.getInvoiceById);
+router.put('/invoices/:id', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InvoiceController.updateInvoice);
 router.get('/invoices/:id/pdf', authenticateJWT, InvoiceController.downloadPDF);
 router.post('/invoices/:id/cancel', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), InvoiceController.cancelInvoice);
 
 // ================= DISPATCH ROUTES =================
 router.post('/dispatches', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), DispatchController.createDispatch);
 router.get('/dispatches', authenticateJWT, DispatchController.getDispatches);
+router.get('/dispatches/:id', authenticateJWT, DispatchController.getDispatchById);
+router.patch('/dispatches/:id/delivery-status', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), DispatchController.updateDeliveryStatus);
+
+// ================= SALES RETURNS & CREDIT NOTES =================
+router.post('/sales/returns', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.createReturn);
+router.post('/sales-returns', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER), SalesController.createReturn);
+router.get('/sales/returns', authenticateJWT, SalesController.getReturns);
+router.get('/sales-returns', authenticateJWT, SalesController.getReturns);
+router.get('/sales/returns/:id', authenticateJWT, SalesController.getReturnById);
+router.get('/sales-returns/:id', authenticateJWT, SalesController.getReturnById);
+router.get('/credit-notes', authenticateJWT, SalesController.getCreditNotes);
+router.get('/credit-notes/:id', authenticateJWT, SalesController.getCreditNoteById);
+
+// ================= SALES DASHBOARD & REPORTS =================
+router.get('/sales/dashboard/summary', authenticateJWT, SalesController.getDashboardSummary);
+router.get('/sales/reports/salesman-performance', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT_AUDITOR), SalesController.getSalesmanPerformance);
+router.get('/sales/reports/gstr1', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT_AUDITOR), SalesController.getGSTR1Report);
 
 // ================= PRODUCTION ROUTES =================
 // Production Dashboard
@@ -244,7 +292,12 @@ router.get('/reports/stock-summary', authenticateJWT, ReportController.getStockS
 router.get('/reports/production', authenticateJWT, ReportController.getProductionReport);
 router.get('/reports/ageing', authenticateJWT, ReportController.getAgeingReport);
 
-// ================= AUDIT LOG ROUTES =================
-router.get('/audit/logs', authenticateJWT, requireRole(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT_AUDITOR), AuditController.getLogs);
+// ================= PHASE 7 AUDIT MANAGEMENT & COMPLIANCE ROUTES =================
+import auditRoutes from './audit.routes.js';
+router.use('/audit', auditRoutes);
+
+// ================= PHASE 6 FINANCIAL MANAGEMENT ROUTES =================
+import financeRoutes from './finance.routes.js';
+router.use('/finance', financeRoutes);
 
 export default router;

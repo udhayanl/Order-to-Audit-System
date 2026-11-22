@@ -5,6 +5,7 @@ import { z } from 'zod';
 import prisma from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { AuditService } from '../services/audit.service.js';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -39,6 +40,17 @@ export class AuthController {
         secret,
         { expiresIn: '12h' }
       );
+
+      // Track login in UserActivityLog
+      AuditService.logUserActivity({
+        userId: user.id,
+        action: 'LOGIN',
+        entityType: 'AUTH',
+        entityId: user.id,
+        description: `User ${user.fullName} (${user.role}) logged in successfully`,
+        ipAddress: req.ip || req.socket.remoteAddress,
+        userAgent: req.headers['user-agent'] as string,
+      }).catch(() => {});
 
       res.json({
         success: true,

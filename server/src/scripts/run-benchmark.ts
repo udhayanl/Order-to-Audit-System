@@ -186,7 +186,7 @@ export async function runBenchmarkScenario() {
     notes: 'Part-payment against invoice',
     userId: seed.admin.id,
   });
-  console.log(`Payment Recorded: ${pmt.paymentNumber}, Amount: ₹${pmt.amount}`);
+  console.log(`Payment Recorded: ${pmt?.paymentNumber}, Amount: ₹${pmt?.amount}`);
 
   const updatedInvoiceA = await prisma.invoice.findUnique({ where: { id: invoiceA.id } });
   console.log(`Invoice A Updated: Paid: ₹${updatedInvoiceA?.paidAmount}, Outstanding: ₹${updatedInvoiceA?.outstandingAmount} (Expected: ₹3,875)`);
@@ -236,7 +236,7 @@ export async function runBenchmarkScenario() {
     { name: 'CGST', actual: `₹${invoiceA.cgstAmount}`, expected: '₹187.50', pass: Number(invoiceA.cgstAmount) === 187.5 },
     { name: 'SGST', actual: `₹${invoiceA.sgstAmount}`, expected: '₹187.50', pass: Number(invoiceA.sgstAmount) === 187.5 },
     { name: 'Invoice total', actual: `₹${invoiceA.grandTotal}`, expected: '₹7875', pass: Number(invoiceA.grandTotal) === 7875 },
-    { name: 'Retailer A payment', actual: `₹${pmt.amount}`, expected: '₹4000', pass: Number(pmt.amount) === 4000 },
+    { name: 'Retailer A payment', actual: `₹${pmt?.amount}`, expected: '₹4000', pass: Number(pmt?.amount) === 4000 },
     { name: 'Retailer A outstanding', actual: `₹${updatedInvoiceA?.outstandingAmount}`, expected: '₹3875', pass: Number(updatedInvoiceA?.outstandingAmount) === 3875 },
     { name: 'Distributor B order shortage', actual: `${stockCheckB.stockStatus[0].shortage} packets`, expected: '32 packets', pass: stockCheckB.stockStatus[0].shortage === 32 },
     { name: 'Shortage dispatch prevented', actual: dispatchBPrevented ? 'Prevented' : 'Failed', expected: 'Prevented', pass: dispatchBPrevented },
