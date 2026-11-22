@@ -10,10 +10,25 @@ dist/
 build/
 .output/
 
-# Environment
+# Environment — NEVER commit real .env files
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+server/.env
+client/.env
+
+# Secrets & keys — NEVER commit these
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_rsa.pub
+*.secret
 
 # IDE
 .vscode/
