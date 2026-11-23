@@ -1,7 +1,7 @@
 # FactoryFlow – Order-to-Audit Management System
 
 > **A realistic, production-quality, full-stack enterprise web application designed for a small-scale South Indian packaged food manufacturing business (producing Murukku, Mixture, Chips, and Sweets).**  
-> *Developed as an individual internship project for the Centre for Digital Infrastructure, National Institute of Technology, Tiruchirappalli (NIT-T).*
+> *A complete, production-quality ERP web application for small-scale food manufacturing businesses.*
 
 ---
 
@@ -10,7 +10,7 @@
 **FactoryFlow** is a complete, genuinely working Order-to-Audit manufacturing execution and accounting system. It connects field sales order capture, administrative order verification and shortage control, Bill of Materials (BOM) recipe planning, batch production execution with material consumption and yield variance tracking, immutable stock ledger management, strict First-In First-Out (FIFO) inventory valuation, statutory GST tax invoicing with PDFKit invoice generation, customer payment tracking with ageing buckets, and certified auditor registers exportable to Excel and CSV.
 
 ### Real-World Business Context
-The application models a realistic packaged food manufacturing enterprise located in **Tiruchirappalli, Tamil Nadu**, producing traditional savory products such as **Murukku 200 g** and **Madras Mixture 250 g**. The manufacturing workflow involves bulk raw ingredient procurement (rice flour, urad dhal, groundnut/sesame cooking oil, salt and spice blends), food-grade pouch packaging, corrugated carton packing, boiling and frying energy overheads, and dispatch to regional retailers (Tamil Nadu) and interstate distributors (Karnataka).
+The application models a realistic packaged food manufacturing enterprise located in **Tamil Nadu**, producing traditional savory products such as **Murukku 200 g** and **Madras Mixture 250 g**. The manufacturing workflow involves bulk raw ingredient procurement (rice flour, urad dhal, groundnut/sesame cooking oil, salt and spice blends), food-grade pouch packaging, corrugated carton packing, boiling and frying energy overheads, and dispatch to regional retailers (Tamil Nadu) and interstate distributors (Karnataka).
 
 ---
 
@@ -195,14 +195,14 @@ Open **`http://localhost:5000`** in your browser.
 
 ---
 
-## 8. NIT Trichy Technical Evaluation & Automated Tests
+## 8. Technical Evaluation & Automated Tests
 
-### A. Certified Evaluation Scorecard (`npm run evaluate`)
+### A. Evaluation Scorecard (`npm run evaluate`)
 The test runner executes a clean database re-initialization and verifies all 41 evaluation criteria across 8 modules:
 
 ```
 ================================================================================
-   NIT TIRUCHIRAPPALLI – CENTRE FOR DIGITAL INFRASTRUCTURE EVALUATION REPORT    
+   FACTORYFLOW – ORDER-TO-AUDIT SYSTEM EVALUATION REPORT                        
    PROJECT: FactoryFlow (Order-to-Audit Management System)                      
 ================================================================================
 TOTAL EVALUATION SCORE: 360 / 360 points (100.0%)
@@ -262,10 +262,10 @@ npm run test:sales     # Phase 5 Sales Management & GST Invoicing Test Suite (51
 npm run test:prod      # Phase 4 Production Management Test Suite (45/45 PASSED)
 npm run test:inventory # Phase 3 Inventory & Stock Ledger Test Suite (38/38 PASSED)
 npm run test:masters   # Phase 2 Master Data CRUD Test Suite (28/28 PASSED)
-npm run benchmark:phase6 # Phase 6 NIT Trichy Benchmark Verification (33/33 PASSED)
-npm run benchmark:phase5 # Phase 5 NIT Trichy Benchmark Verification (22/22 PASSED)
-npm run benchmark:phase4 # Phase 4 NIT Trichy Benchmark Verification (11/11 PASSED)
-npm run evaluate       # Full 360-point NIT Trichy Evaluation Scorecard (100% Grade A+)
+npm run benchmark:phase6 # Phase 6 Benchmark Verification (33/33 PASSED)
+npm run benchmark:phase5 # Phase 5 Benchmark Verification (22/22 PASSED)
+npm run benchmark:phase4 # Phase 4 Benchmark Verification (11/11 PASSED)
+npm run evaluate       # Full 360-point Evaluation Scorecard (100% Grade A+)
 ```
 
 ### C. Phase 6 – Financial Management, Payments & Accounts Receivable/Payable
@@ -323,7 +323,7 @@ Phase 5 establishes a complete, immutable order-to-dispatch workflow connecting 
 | 20 | **Invoice Immutability** | POSTED tax invoices immutable under GST law | 400 Bad Request on edit attempt | PASS |
 
 ### C. Implementation Weaknesses Identified & Fixed
-During the NIT-T architectural audit, several subtle edge cases were identified and systematically resolved:
+During the architectural audit, several subtle edge cases were identified and systematically resolved:
 1. **Order Dispatch State Machine Guard**: Previously, dispatch verified stock shortage but did not prevent dispatching orders that had been rejected. Added strict checks enforcing that `REJECTED` orders cannot be dispatched.
 2. **Purchase Item Numerical Validation**: Prevented negative or zero procurement quantities (`qty <= 0`) and negative pricing (`rate < 0`) at the service layer.
 3. **Authenticated File Download Protocol**: Browsers opening window links directly without custom bearer headers received `401 Unauthorized`. Added support for validated `?token=` query authentication in `authenticateJWT` alongside `Bearer` headers, plus a frontend blob-streaming download manager in `client/src/api/client.ts`.
@@ -402,7 +402,7 @@ Every phase, calculation formula, and transactional lifecycle is thoroughly cove
 | **Phase 3: Inventory Management** | `npm run test:inventory` | Strict FIFO layers, GRN, immutable stock ledger | **36 / 36 Passed** | **100%** |
 | **Phase 2: Master Data CRUD** | `npm run test:masters` | Referential integrity, cascade/restrict constraints | **26 / 26 Passed** | **100%** |
 | **Core Formulas & Security** | `npm run test` | UOM conversions, negative stock block, ACID rollback | **27 / 27 Passed** | **100%** |
-| **NIT Trichy Master Evaluator** | `npm run evaluate` | Master Order-to-Audit business scenario evaluation | **360 / 360 Points** | **Grade A+** |
+| **Master Evaluator** | `npm run evaluate` | Master Order-to-Audit business scenario evaluation | **360 / 360 Points** | **Grade A+** |
 | **Frontend Production Build** | `cd client; npm run build` | TypeScript compiler (`tsc`) & Vite bundle packaging | **0 Errors** | **100%** |
 | **Backend TypeScript Typecheck** | `cd server; npx tsc --noEmit` | Strict static type validation across all services | **0 Errors** | **100%** |
 
@@ -479,8 +479,7 @@ The database seed (`npm run db:seed`) creates five realistic role accounts:
 
 ---
 
-## 15. Internship Evaluation & Acknowledgements
+## 15. Acknowledgements
 
-- **Centre**: Centre for Digital Infrastructure, National Institute of Technology, Tiruchirappalli (NIT-T).
 - **Project**: FactoryFlow – Order-to-Audit Management System for Small Food Manufacturers.
-- **Evaluation Status**: **360 / 360 Points (100%, Grade A+)** on the automated NIT Trichy Master Benchmark.
+- **Evaluation Status**: **360 / 360 Points (100%, Grade A+)** on the automated Master Benchmark.

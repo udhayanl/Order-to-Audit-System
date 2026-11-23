@@ -500,7 +500,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       {/* System info */}
       <div className="mt-auto pt-4 border-t border-gray-100 text-[11px] text-gray-400">
         <div>FactoryFlow v1.0.0</div>
-        <div>NIT Tiruchirappalli Internship</div>
+        <div>Order-to-Audit Management</div>
       </div>
     </aside>
   </>

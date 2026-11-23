@@ -32,7 +32,7 @@ export const env = validateEnv() || {
   NODE_ENV: (process.env.NODE_ENV as any) || 'development',
   PORT: parseInt(process.env.PORT || '5000', 10),
   DATABASE_URL: process.env.DATABASE_URL || '',
-  JWT_SECRET: process.env.JWT_SECRET || 'factoryflow_super_secret_jwt_key_2026_nit_trichy',
+  JWT_SECRET: process.env.JWT_SECRET || 'factoryflow_dev_fallback_secret_key_min_32_chars',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || '*',
 };
 

@@ -77,7 +77,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="text-[11px] text-gray-400 pt-2 border-t border-gray-100">
-              FactoryFlow v1.0.0 &bull; NIT Tiruchirappalli Internship Evaluation
+              FactoryFlow v1.0.0 &bull; Order-to-Audit Management System
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@
     "benchmark:phase5": "tsx src/scripts/verify-phase5-benchmark.ts",
     "benchmark:phase6": "tsx src/scripts/verify-phase6-benchmark.ts",
     "audit:bom": "tsx src/scripts/audit-bom-production.ts",
-    "evaluate": "tsx src/scripts/nit-evaluator.ts",
+    "evaluate": "tsx src/scripts/evaluator.ts",
     "test:masters": "tsx src/tests/master-crud.test.ts",
     "test:inventory": "tsx src/tests/inventory-stock-ledger.test.ts",
     "test:production": "tsx src/tests/production-manufacturing.test.ts",

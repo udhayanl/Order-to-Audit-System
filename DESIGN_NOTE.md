@@ -1,7 +1,7 @@
 # FactoryFlow – Architectural Design & Technical Specification
 
 > **Technical Architecture, Data Models, Calculation Formulas, and Transactional Safety Mechanisms.**  
-> *Author: Senior Full-Stack Software Architect, NIT Tiruchirappalli Internship Evaluation.*
+> *Author: Senior Full-Stack Software Architect.*
 
 ---
 
@@ -211,15 +211,14 @@ Production posting and Dispatch operations touch multiple tables simultaneously.
 
 ---
 
-## 8. NIT Tiruchirappalli Technical Evaluation Scorecard & Audit Trail
+## 8. Technical Evaluation Scorecard & Audit Trail
 
-> **Evaluation Venue**: Centre for Digital Infrastructure, National Institute of Technology, Tiruchirappalli  
-> **Evaluation Script**: `server/src/scripts/nit-evaluator.ts` (`npm run evaluate`)  
+> **Evaluation Script**: `server/src/scripts/evaluator.ts` (`npm run evaluate`)  
 > **Audit Status**: **360 / 360 Points (100.0%) – Grade A+ (Certified Perfect Benchmark Accuracy)**  
 
 ```
 ================================================================================
-   NIT TIRUCHIRAPPALLI – CENTRE FOR DIGITAL INFRASTRUCTURE EVALUATION REPORT    
+   FACTORYFLOW – ORDER-TO-AUDIT SYSTEM EVALUATION REPORT                        
    PROJECT: FactoryFlow (Order-to-Audit Management System)                      
 ================================================================================
 TOTAL EVALUATION SCORE: 360 / 360 points (100.0%)
@@ -305,7 +304,7 @@ During the evaluation process, five potential industrial failure modes were anal
 
 2. **Indian Statutory GST Engine (`GSTService`)**:
    - Compliant with Indian GST Act (Section 31 & Rule 46).
-   - Factory location: Thuvakudi, Tiruchirappalli, Tamil Nadu (`State Code: 33`).
+   - Factory location: Thuvakudi, Tamil Nadu (`State Code: 33`).
    - Customer State Detection: Customers with `stateCode === '33'` trigger intra-state split (CGST 2.5% + SGST 2.5%). Customers outside Tamil Nadu (e.g. Karnataka `29`) trigger full inter-state IGST (5.0%).
    - Exact decimal precision calculations avoiding floating-point drift.
    - Comprehensive GSTIN checksum and format validation via regex.
@@ -322,7 +321,7 @@ During the evaluation process, five potential industrial failure modes were anal
 
 ### 9.2 Benchmark Verification Summary
 
-| Metric | NIT Trichy Benchmark Target | Actual Verified Result | Status |
+| Metric | Benchmark Target | Actual Verified Result | Status |
 |--------|----------------------------|------------------------|--------|
 | Phase 4 Murukku Baseline FG | 188 packets | 188 packets | PASS |
 | Retailer A Order (TN, 33) | 100 pkts @ ₹50 = ₹5,000 + 5% GST | ₹5,000 taxable + ₹125 CGST + ₹125 SGST = ₹5,250.00 | PASS |
@@ -362,7 +361,7 @@ Phase 6 implements a standard double-entry accounting engine in PostgreSQL that 
    - **Net Operating Profit (EBITDA)** = $\text{Gross Profit} - \sum \text{Operating Expenses}$
    - **Net Profit Margin \%** = $\left(\frac{\text{Net Operating Profit}}{\text{Net Taxable Revenue}}\right) \times 100$
 
-### 10.2 Phase 6 NIT Trichy Benchmark Verification Summary
+### 10.2 Phase 6 Benchmark Verification Summary
 
 | Metric / Scenario Item | Target (Benchmark Specification) | Actual Verified Result | Verification Status |
 | :--- | :--- | :--- | :--- |
@@ -378,7 +377,7 @@ Phase 6 implements a standard double-entry accounting engine in PostgreSQL that 
 | **Trial Balance Equilibrium** | Total Debits == Total Credits | Difference = **₹0.00** (`isBalanced: true`) | **PASS (100%)** |
 | **Financial Automated Tests** | 49 test cases across 8 modules | **49 / 49 PASSED (100%)** | **PASS (100%)** |
 | **Phase 6 Benchmark Test Suite** | 33 numerical and accounting checks | **33 / 33 PASSED (100%)** | **PASS (100%)** |
-| **NIT Trichy Evaluation Score** | Master evaluator script | **360 / 360 Points (Grade A+)** | **PASS (100%)** |
+| **Evaluation Score** | Master evaluator script | **360 / 360 Points (Grade A+)** | **PASS (100%)** |
 
 ---
 
@@ -545,7 +544,7 @@ graph TD
 | **Phase 3 Inventory & Stock Ledger** | Strict FIFO, GRN & reconciliation | **36 / 36 PASSED (100%)** | **PASS** |
 | **Phase 2 Master Data CRUD Suite** | Referential integrity protection | **26 / 26 PASSED (100%)** | **PASS** |
 | **Core Formula & Security Suite** | Unit conversions & ACID rollback | **27 / 27 PASSED (100%)** | **PASS** |
-| **NIT Trichy Master Evaluator** | Complete business benchmark run | **360 / 360 Points (Grade A+)**| **PASS** |
+| **Master Evaluator** | Complete business benchmark run | **360 / 360 Points (Grade A+)**| **PASS** |
 | **TypeScript Server Typecheck** | Zero compiler errors (`tsc`) | **0 Errors (Clean build)** | **PASS** |
 | **Vite Client Production Build** | Minified bundle packaging | **0 Errors (Built in 5.49s)** | **PASS** |
 

@@ -21,9 +21,9 @@ interface EvalMetric {
   maxScore: number;
 }
 
-export async function runNITEvaluation() {
+export async function runEvaluation() {
   console.log('\n================================================================================');
-  console.log('   NIT TIRUCHIRAPPALLI – CENTRE FOR DIGITAL INFRASTRUCTURE EVALUATION REPORT    ');
+  console.log('   FACTORYFLOW – ORDER-TO-AUDIT SYSTEM EVALUATION REPORT                        ');
   console.log('   PROJECT: FactoryFlow (Order-to-Audit Management System)                      ');
   console.log('================================================================================\n');
 
@@ -99,7 +99,7 @@ export async function runNITEvaluation() {
         gstRate: 5.0,
       },
     ],
-    notes: 'NIT Evaluation Step 1',
+    notes: 'Evaluation Step 1',
   });
 
   const flourAfterPO = await InventoryService.getCurrentStock(ItemType.RAW_MATERIAL, seed.flourRM.id);
@@ -135,7 +135,7 @@ export async function runNITEvaluation() {
       { itemType: ItemType.PACKAGING, packagingMaterialId: seed.pouchPkg.id, plannedQuantity: 200, actualQuantity: 194, unit: 'pieces' },
       { itemType: ItemType.PACKAGING, packagingMaterialId: seed.cartonPkg.id, plannedQuantity: 10, actualQuantity: 9, unit: 'pieces' },
     ],
-    notes: 'NIT Benchmark Production Run PR-1',
+    notes: 'Benchmark Production Run PR-1',
     userId: seed.supervisor.id,
   });
 
@@ -267,7 +267,7 @@ export async function runNITEvaluation() {
   // EVALUATION SCORECARD
   // --------------------------------------------------------------------------
   console.log('\n================================================================================');
-  console.log('                 FINAL NIT TIRUCHIRAPPALLI EVALUATION SCORECARD                 ');
+  console.log('                 FINAL FACTORYFLOW EVALUATION SCORECARD                     ');
   console.log('================================================================================\n');
 
   console.table(
@@ -297,7 +297,7 @@ export async function runNITEvaluation() {
 }
 
 // Execute
-runNITEvaluation()
+runEvaluation()
   .then(() => process.exit(0))
   .catch((err) => {
     console.error('Fatal Evaluation Error:', err);

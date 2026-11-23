@@ -22,7 +22,7 @@ function check(title: string, condition: boolean, actual: any, expected: any) {
 
 export async function runPhase5Benchmark() {
   console.log('\n======================================================================');
-  console.log('   NIT TIRUCHIRAPPALLI EVALUATION BENCHMARK: PHASE 5 SALES & DISPATCH ');
+  console.log('   FACTORYFLOW EVALUATION BENCHMARK: PHASE 5 SALES & DISPATCH          ');
   console.log('   Order-to-Audit Management System: Packaged Murukku (200 g)         ');
   console.log('======================================================================\n');
 
@@ -68,7 +68,7 @@ export async function runPhase5Benchmark() {
     salesmanId: salesmanAId,
     callerRole: Role.ADMIN,
     items: [{ productId: murukku.id, quantity: 100 }],
-    orderNotes: 'Benchmark Order A: Retailer in Trichy',
+    orderNotes: 'Benchmark Order A: Retailer in Tamil Nadu',
   });
 
   await OrderService.approveOrder(orderA.id, adminId, Role.ADMIN);
@@ -94,7 +94,7 @@ export async function runPhase5Benchmark() {
     orderId: orderA.id,
     vehicleNumber: 'TN-45-AK-2026',
     driverName: 'Kandasamy R',
-    transporter: 'Trichy Fast Freight',
+    transporter: 'TN Fast Freight',
     remarks: 'Dispatched 100 pkts Murukku 200g',
     items: [{ productId: murukku.id, quantity: 100, batchNumber: 'BATCH-2026-0001' }],
     userId: adminId,
@@ -184,7 +184,7 @@ export async function runPhase5Benchmark() {
 
   console.log('\n======================================================================');
   console.log(`   PHASE 5 BENCHMARK EVALUATION SUMMARY: ${passed} PASSED / ${failed} FAILED`);
-  console.log('   NIT Trichy Packaged Food Benchmark Scenario: 100% VERIFIED');
+  console.log('   Packaged Food Benchmark Scenario: 100% VERIFIED');
   console.log('======================================================================\n');
 
   if (failed > 0) {

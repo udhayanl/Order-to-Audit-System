@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           <span className="font-bold text-lg text-gray-900 tracking-tight flex items-center gap-1.5">
             FactoryFlow
             <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 font-medium rounded bg-gray-100 text-gray-600 border border-gray-200">
-              NIT-T Demo
+              ERP
             </span>
           </span>
           <p className="text-xs text-gray-500 hidden sm:block">Order-to-Audit Factory Management</p>

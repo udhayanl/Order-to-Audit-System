@@ -25,7 +25,7 @@ function check(title: string, condition: boolean, actual: any, expected: any) {
 
 export async function runPhase6Benchmark() {
   console.log('\n======================================================================');
-  console.log('   NIT TIRUCHIRAPPALLI EVALUATION BENCHMARK: PHASE 6 FINANCE & AR/AP   ');
+  console.log('   FACTORYFLOW EVALUATION BENCHMARK: PHASE 6 FINANCE & AR/AP           ');
   console.log('   Order-to-Audit Management System: Packaged Murukku (200 g)         ');
   console.log('======================================================================\n');
 
@@ -299,7 +299,7 @@ export async function runPhase6Benchmark() {
 
   console.log('\n======================================================================');
   console.log(`   PHASE 6 BENCHMARK EVALUATION SUMMARY: ${passed} PASSED / ${failed} FAILED`);
-  console.log('   NIT Trichy Financial Management Benchmark: 100% VERIFIED');
+  console.log('   Financial Management Benchmark: 100% VERIFIED');
   console.log('======================================================================\n');
 
   if (failed > 0) {
